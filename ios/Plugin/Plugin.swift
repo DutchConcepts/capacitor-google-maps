@@ -137,6 +137,43 @@ public class CapacitorGoogleMaps: CustomMapViewEvents {
         }
     }
 
+    @objc func viewBounds(_ call: CAPPluginCall) {
+        let mapId: String = call.getString("mapId", "");
+
+        DispatchQueue.main.async {
+            let customMapView = self.customMapViews[mapId];
+
+            if (customMapView != nil) {
+
+                let bounds = customMapView?.GMapView.visibleRegion();
+
+                call.resolve([
+                    "bounds": [
+                        "farLeft": [
+                            "latitude": bounds.farLeft.latitude as Any,
+                            "longitude": bounds.farLeft.longitude as Any
+                        ],
+                        "farRight":[
+                            "latitude": bounds.farRight.latitude as Any,
+                            "longitude": bounds.farRight.longitude as Any
+                        ],
+                        "nearLeft":[
+                            "latitude": bounds.nearLeft.latitude as Any,
+                            "longitude": bounds.nearLeft.longitude as Any
+                        ],
+                        "nearRight":[
+                            "latitude": bounds.nearRight.latitude as Any,
+                            "longitude": bounds.nearRight.longitude as Any
+                        ]
+                    ]                  
+                ])
+                
+            } else {
+                call.reject("map not found");
+            }
+        }
+    }
+
     @objc func didTapInfoWindow(_ call: CAPPluginCall) {
         setCallbackIdForEvent(call: call, eventName: CustomMapView.EVENT_DID_TAP_INFO_WINDOW);
     }

@@ -1,4 +1,5 @@
 import { WebPlugin } from "@capacitor/core";
+import { ViewBoundsOptions, ViewBoundsResult } from ".";
 
 import {
   CapacitorGoogleMapsPlugin,
@@ -72,6 +73,10 @@ export class CapacitorGoogleMapsWeb extends WebPlugin
   }
 
   async removeMarker(_options: RemoveMarkerOptions): Promise<void> {
+    throw this.unimplemented("Not implemented on web.");
+  }
+
+  async viewBounds(_options: ViewBoundsOptions): Promise<ViewBoundsResult> {
     throw this.unimplemented("Not implemented on web.");
   }
 

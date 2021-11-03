@@ -8,6 +8,7 @@ export { MoveCameraOptions, MoveCameraResult } from "./methods/MoveCamera";
 export { ElementFromPointResultOptions } from "./methods/ElementFromPointResult";
 export { AddMarkerOptions, AddMarkerResult } from "./methods/AddMarker";
 export { RemoveMarkerOptions } from "./methods/RemoveMarker";
+export { ViewBoundsOptions, ViewBoundsResult } from "./methods/ViewBounds";
 
 // events
 export * from "./events/DidTapInfoWindow";
@@ -38,3 +39,4 @@ export { MapPreferences } from "./models/GoogleMap/Preferences";
 export { PointOfInterest } from "./models/GoogleMap/PointOfInterest";
 export { BoundingRect } from "./models/BoundingRect";
 export { LatLng } from "./models/LatLng";
+export { ViewBounds } from "./models/GoogleMap/ViewBounds";

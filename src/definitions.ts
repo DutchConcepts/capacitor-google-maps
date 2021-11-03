@@ -15,6 +15,8 @@ import {
   AddMarkerOptions,
   AddMarkerResult,
   RemoveMarkerOptions,
+  ViewBoundsOptions,
+  ViewBoundsResult,
   // events
   DidTapInfoWindowCallback,
   DidCloseInfoWindowCallback,
@@ -67,6 +69,8 @@ export interface CapacitorGoogleMapsPlugin {
   addMarker(options: AddMarkerOptions): Promise<AddMarkerResult>;
 
   removeMarker(options: RemoveMarkerOptions): Promise<void>;
+
+  viewBounds(options: ViewBoundsOptions): Promise<ViewBoundsResult>;
 
   didTapInfoWindow(
     options: DefaultEventOptions,
