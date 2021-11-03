@@ -12,6 +12,7 @@ Below is an index of all the methods available.
 - [`moveCamera(...)`](#movecamera)
 - [`addMarker(...)`](#addmarker)
 - [`removeMarker(...)`](#removemarker)
+- [`viewBounds(...)`](#viewbounds)
 - [`didTapInfoWindow(...)`](#didtapinfowindow)
 - [`didCloseInfoWindow(...)`](#didcloseinfowindow)
 - [`didTapMap(...)`](#didtapmap)
@@ -138,6 +139,20 @@ removeMarker(options: RemoveMarkerOptions) => Promise<void>
 | Param         | Type                                                                |
 | ------------- | ------------------------------------------------------------------- |
 | **`options`** | <code><a href="#removemarkeroptions">RemoveMarkerOptions</a></code> |
+
+---
+
+### viewBounds(...)
+
+```typescript
+viewBounds(options: ViewBoundsOptions) => Promise<ViewBoundsResult>
+```
+
+| Param         | Type                                                            |
+| ------------- | --------------------------------------------------------------- |
+| **`options`** | <code><a href="#viewboundsoptions">ViewBoundsOptions</a></code> |
+
+**Returns:** <code>Promise&lt;<a href="#viewboundsresult">ViewBoundsResult</a>&gt;</code>
 
 ---
 
@@ -407,6 +422,15 @@ It is handled automatically and you should probably not use it.
 | **`cameraPosition`** | <code><a href="#cameraposition">CameraPosition</a></code> | See <a href="#cameraposition">CameraPosition</a> | 2.0.0 |
 | **`preferences`**    | <code><a href="#mappreferences">MapPreferences</a></code> | See <a href="#mappreferences">MapPreferences</a> | 2.0.0 |
 
+#### ViewBounds
+
+| Prop            | Type                                      | Description            | Since |
+| --------------- | ----------------------------------------- | ---------------------- | ----- |
+| **`farLeft`**   | <code><a href="#latlng">LatLng</a></code> | Latitude and longitude | 2.0.0 |
+| **`farRight`**  | <code><a href="#latlng">LatLng</a></code> | Latitude and longitude | 2.0.0 |
+| **`nearLeft`**  | <code><a href="#latlng">LatLng</a></code> | Latitude and longitude | 2.0.0 |
+| **`nearRight`** | <code><a href="#latlng">LatLng</a></code> | Latitude and longitude | 2.0.0 |
+
 #### CameraPosition
 
 The map view is modeled as a camera looking down on a flat plane.
@@ -555,6 +579,12 @@ An intrinsic object that provides functions to convert JavaScript values to and 
 | **`marker`**   | <code><a href="#marker">Marker</a></code> | 2.0.0 |
 | **`position`** | <code><a href="#latlng">LatLng</a></code> | 2.0.0 |
 
+#### ViewBoundsResult
+
+| Prop         | Type                                              | Since |
+| ------------ | ------------------------------------------------- | ----- |
+| **`bounds`** | <code><a href="#viewbounds">ViewBounds</a></code> | 2.0.0 |
+
 #### Marker
 
 | Prop              | Type                 | Description                                                                                                                                                                                                                                                                                               | Since |
@@ -575,6 +605,12 @@ An intrinsic object that provides functions to convert JavaScript values to and 
 | **`mapId`**       | <code>string</code>                                             | 2.0.0 |
 | **`preferences`** | <code><a href="#markerpreferences">MarkerPreferences</a></code> | 2.0.0 |
 | **`position`**    | <code><a href="#latlng">LatLng</a></code>                       | 2.0.0 |
+
+#### ViewBoundsOptions
+
+| Prop        | Type                | Since |
+| ----------- | ------------------- | ----- |
+| **`mapId`** | <code>string</code> | 2.0.0 |
 
 #### MarkerPreferences
 
