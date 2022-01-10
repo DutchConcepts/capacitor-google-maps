@@ -18,7 +18,7 @@ final class SDWebImageCache: ImageURLLoadable {
     private let cache = SDImageCache.shared
     private let downloadManager = SDWebImageManager.shared
     
-    init() {
+    private init() {
         cache.config.maxDiskAge = 7 * 24 * 60 * 60
     }
     
