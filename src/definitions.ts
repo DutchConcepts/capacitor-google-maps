@@ -12,6 +12,7 @@ import {
   ElementFromPointResultOptions,
   AddMarkerOptions,
   AddMarkerResult,
+  DisableMapOptions,
   // events
   DidTapInfoWindowCallback,
   DidCloseInfoWindowCallback,
@@ -51,6 +52,8 @@ export interface CapacitorGoogleMapsPlugin {
   moveCamera(options: MoveCameraOptions): Promise<MoveCameraResult>;
 
   addMarker(options: AddMarkerOptions): Promise<AddMarkerResult>;
+
+  disableMap(options: DisableMapOptions): Promise<void>;
 
   removeMarker(markerId: string): Promise<void>;
 

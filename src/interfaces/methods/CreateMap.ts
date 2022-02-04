@@ -24,6 +24,10 @@ export interface CreateMapOptions {
    * @since 2.0.0
    */
   preferences?: MapPreferences;
+  /**
+  * @since 2.0.0
+  */
+  internalBounds?: [];
 }
 
 export interface CreateMapResult {

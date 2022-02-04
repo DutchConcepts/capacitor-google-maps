@@ -2,7 +2,21 @@ import Foundation
 import Capacitor
 import GoogleMaps
 
+extension UIView {
+    func findViewController() -> UIViewController? {
+        if let nextResponder = self.next as? UIViewController {
+            return nextResponder
+        } else if let nextResponder = self.next as? UIView {
+            return nextResponder.findViewController()
+        } else {
+            return nil
+        }
+    }
+}
+
+
 @objc(CapacitorGoogleMaps)
+
 public class CapacitorGoogleMaps: CustomMapViewEvents {
 
     var GOOGLE_MAPS_KEY: String = "";
@@ -42,12 +56,51 @@ public class CapacitorGoogleMaps: CustomMapViewEvents {
 
             let preferences = call.getObject("preferences", JSObject());
             customMapView.mapPreferences.updateFromJSObject(preferences);
-
-            self.bridge?.viewController?.view.addSubview(customMapView.view);
-
+            
+            let innerElements = call.getArray("innerElements", JSArray())
+            
+            self.bridge?.webView?.isOpaque = false
+            self.bridge?.webView?.backgroundColor = .clear
+   
+            let passThroughView = PassThroughView(frame:(self.bridge?.viewController?.view.frame)!)
+   
+            self.bridge?.viewController?.view = passThroughView
+            
+            passThroughView.insertSubview(self.bridge?.webView as! UIView, at: 0)
+            passThroughView.insertSubview(customMapView.view, at: 0)
+            passThroughView.setInnerElements(elements: innerElements)
+            
+            
             customMapView.GMapView.delegate = customMapView;
-
             self.customMapViews[customMapView.id] = customMapView;
+            
+            
+        }
+    }
+    
+    @objc func disableMap(_ call: CAPPluginCall){
+        let mapId: String = call.getString("mapId")!;
+        DispatchQueue.main.async {
+            let customMapView = self.customMapViews[mapId];
+
+            if (customMapView != nil) {
+                customMapView?.view.isUserInteractionEnabled = false
+            } else {
+                call.reject("map not found");
+            }
+        }
+    }
+    
+    @objc func enableMap(_ call: CAPPluginCall){
+        let mapId: String = call.getString("mapId")!
+        DispatchQueue.main.async {
+            let customMapView = self.customMapViews[mapId];
+
+            if (customMapView != nil) {
+                customMapView?.view.isUserInteractionEnabled = true
+            } else {
+                call.reject("map not found");
+            }
         }
     }
 

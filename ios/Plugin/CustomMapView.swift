@@ -55,6 +55,8 @@ class CustomMapView: UIViewController, GMSMapViewDelegate {
         super.init(coder: aDecoder)
     }
 
+
+    
     override func viewDidLoad() {
         super.viewDidLoad();
         
@@ -74,7 +76,7 @@ class CustomMapView: UIViewController, GMSMapViewDelegate {
             ]
         ]);
     }
-
+    
     func invalidateMap() {
         if (self.GMapView == nil) {
             return;

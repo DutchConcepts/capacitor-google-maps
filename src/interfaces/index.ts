@@ -5,6 +5,7 @@ export { UpdateMapOptions, UpdateMapResult } from "./methods/UpdateMap";
 export { MoveCameraOptions, MoveCameraResult } from "./methods/MoveCamera";
 export { ElementFromPointResultOptions } from "./methods/ElementFromPointResult";
 export { AddMarkerOptions, AddMarkerResult } from "./methods/AddMarker";
+export { DisableMapOptions } from "./methods/DisableMap";
 
 // events
 export * from "./events/DidTapInfoWindow";
