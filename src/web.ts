@@ -113,7 +113,7 @@ export class CapacitorGoogleMapsWeb extends WebPlugin
     throw this.unimplemented("Not implemented on web.");
   }
 
-  disableMap(options: DisableMapOptions): Promise<void> {
+  disableMap(_options: DisableMapOptions): Promise<void> {
     throw this.unimplemented("Not implemented on web.");
   }
 }
