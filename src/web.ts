@@ -22,6 +22,7 @@ import {
   DidTapMyLocationDotCallback,
   DefaultEventOptions,
   DefaultEventWithPreventDefaultOptions,
+  DisableMapOptions,
 } from "./definitions";
 
 export class CapacitorGoogleMapsWeb extends WebPlugin
@@ -109,6 +110,10 @@ export class CapacitorGoogleMapsWeb extends WebPlugin
   async elementFromPointResult(
     _options: ElementFromPointResultOptions
   ): Promise<void> {
+    throw this.unimplemented("Not implemented on web.");
+  }
+
+  disableMap(options: DisableMapOptions): Promise<void> {
     throw this.unimplemented("Not implemented on web.");
   }
 }
