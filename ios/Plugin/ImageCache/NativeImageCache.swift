@@ -1,10 +1,3 @@
-//
-//  NativeImageCache.swift
-//  App
-//
-//  Created by Elanwave on 3.1.22..
-//
-
 import UIKit
 
 private enum Constants {
@@ -14,13 +7,13 @@ private enum Constants {
 
 final class NativeImageCache: ImageURLLoadable {
     static let shared: ImageURLLoadable = NativeImageCache()
-    
+
     private lazy var cache: NSCache<AnyObject, AnyObject> = {
         NSCache<AnyObject, AnyObject>()
     }()
-    
+
     private init(){}
-    
+
     func image(at urlString: String, completion: @escaping VoidReturnClosure<UIImage?>) {
         guard let url = URL(string: urlString) else {
             completion(nil)
@@ -49,7 +42,7 @@ final class NativeImageCache: ImageURLLoadable {
         }
         completion(image)
     }
-    
+
     func clear(completion: @escaping NoArgsClosure) {
         cache.removeAllObjects()
         completion()

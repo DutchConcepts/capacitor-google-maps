@@ -1,16 +1,9 @@
-//
-//  ConnectedList.swift
-//  CapacitorCommunityCapacitorGooglemapsNative
-//
-//  Created by Elanwave on 10.1.22..
-//
-
 import Foundation
 
 public class Node<T> {
     var value: T
     var next: Node?
-    
+
     init(value: T) {
         self.value = value
     }
@@ -19,7 +12,7 @@ public class Node<T> {
 public class List<T> {
     fileprivate var head: Node<T>?
     private var tail: Node<T>?
-    
+
     public var isEmpty: Bool {
         return head == nil
     }
@@ -35,16 +28,16 @@ public class List<T> {
             self.append(value: $0)
         }
     }
-    
+
     public func append(value: T) {
         let newNode = Node<T>(value: value)
-        
+
         if let tailNode = tail {
             tailNode.next = newNode
         } else {
             head = newNode
         }
-        
+
         tail = newNode
     }
 }

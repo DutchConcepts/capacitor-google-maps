@@ -1,10 +1,3 @@
-//
-//  ImageURLLoadable.swift
-//  App
-//
-//  Created by Elanwave on 3.1.22..
-//
-
 import UIKit
 
 protocol ImageURLLoadable {
