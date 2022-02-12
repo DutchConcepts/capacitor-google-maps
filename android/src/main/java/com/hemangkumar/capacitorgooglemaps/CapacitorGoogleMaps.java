@@ -2,6 +2,8 @@ package com.hemangkumar.capacitorgooglemaps;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Rect;
 import android.view.MotionEvent;
@@ -9,14 +11,20 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.getcapacitor.JSObject;
+import com.getcapacitor.Logger;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 import com.getcapacitor.annotation.Permission;
+import com.google.android.libraries.maps.model.BitmapDescriptorFactory;
 import com.google.android.libraries.maps.model.CameraPosition;
 import com.google.android.libraries.maps.model.Marker;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -477,6 +485,9 @@ public class CapacitorGoogleMaps extends Plugin implements CustomMapViewEvents  
     public void addMarker(final PluginCall call) {
         final String mapId = call.getString("mapId");
 
+        final String url = call.getObject("icon").getString("url");
+        Bitmap imageBitmap = getBitmapFromURL(url);
+
         getBridge().getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -489,6 +500,10 @@ public class CapacitorGoogleMaps extends Plugin implements CustomMapViewEvents  
                     customMarker.updateFromJSObject(preferences);
 
                     Marker marker = customMapView.addMarker(customMarker);
+
+                    if (imageBitmap != null) {
+                        marker.setIcon(BitmapDescriptorFactory.fromBitmap(imageBitmap));
+                    }
 
                     call.resolve(CustomMarker.getResultForMarker(marker, mapId));
                 } else {
@@ -519,4 +534,18 @@ public class CapacitorGoogleMaps extends Plugin implements CustomMapViewEvents  
              }
          });
      }
+
+    public Bitmap getBitmapFromURL(String src) {
+        try {
+            URL url = new URL(src);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setDoInput(true);
+            connection.connect();
+            InputStream input = connection.getInputStream();
+            Bitmap bitmap = BitmapFactory.decodeStream(input);
+            return Bitmap.createScaledBitmap(bitmap, (int) (bitmap.getWidth() * devicePixelRatio), (int) (bitmap.getHeight() * devicePixelRatio), true);
+        } catch (IOException e) {
+            return null;
+        }
+    }
 }
