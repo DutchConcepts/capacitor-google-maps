@@ -259,6 +259,10 @@ public class CapacitorGoogleMaps extends Plugin implements CustomMapViewEvents  
                 // Hide the background
                 bridge.getWebView().setBackgroundColor(Color.TRANSPARENT);
                 bridge.getWebView().loadUrl("javascript:document.documentElement.style.backgroundColor = 'transparent';void(0);");
+
+                // Set background color
+                final String backgroundColor = call.getString("backgroundColor", "#ffffff");
+                ((ViewGroup) bridge.getWebView().getParent()).setBackgroundColor(Color.parseColor(backgroundColor));
             }
         });
     }
