@@ -61,7 +61,7 @@ public class CapacitorGoogleMaps: CustomMapViewEvents {
             self.customWebView?.scrollView.sendSubviewToBack(customMapView.view)
 
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                self.setupWebView()
+                self.setupWebView(call)
             }
 
             customMapView.GMapView.delegate = customMapView;
@@ -216,11 +216,12 @@ private extension CapacitorGoogleMaps {
         }
     }
 
-    func setupWebView() {
+    func setupWebView(_ call: CAPPluginCall) {
         DispatchQueue.main.async {
+            let backgroundColor = call.getString("backgroundColor", "")
             self.customWebView?.isOpaque = false
             self.customWebView?.backgroundColor = .clear
-            self.customWebView?.scrollView.backgroundColor = .white
+            self.customWebView?.scrollView.backgroundColor = UIColor.hexColor(backgroundColor)
             self.customWebView?.scrollView.isOpaque = false
 
             let javascript = "document.documentElement.style.backgroundColor = 'transparent'"
@@ -232,5 +233,31 @@ private extension CapacitorGoogleMaps {
 extension CapacitorGoogleMaps: ImageCachable {
     var imageCache: ImageURLLoadable {
         SDWebImageCache.shared
+    }
+}
+
+extension UIColor {
+    // Stackoverflow reference code from Ethan Strider
+    // https://stackoverflow.com/a/27203691
+    static func hexColor(_ hex:String) -> UIColor {
+        var cString:String = hex.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+
+        if (cString.hasPrefix("#")) {
+            cString.remove(at: cString.startIndex)
+        }
+
+        if ((cString.count) != 6) {
+            return UIColor.white
+        }
+
+        var rgbValue:UInt64 = 0
+        Scanner(string: cString).scanHexInt64(&rgbValue)
+
+        return UIColor(
+            red: CGFloat((rgbValue & 0xFF0000) >> 16) / 255.0,
+            green: CGFloat((rgbValue & 0x00FF00) >> 8) / 255.0,
+            blue: CGFloat(rgbValue & 0x0000FF) / 255.0,
+            alpha: CGFloat(1.0)
+        )
     }
 }
