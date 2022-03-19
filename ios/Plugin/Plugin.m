@@ -7,6 +7,8 @@ CAP_PLUGIN(CapacitorGoogleMaps, "CapacitorGoogleMaps",
            CAP_PLUGIN_METHOD(initialize, CAPPluginReturnPromise);
            CAP_PLUGIN_METHOD(createMap, CAPPluginReturnPromise);
            CAP_PLUGIN_METHOD(updateMap, CAPPluginReturnPromise);
+           CAP_PLUGIN_METHOD(cluster, CAPPluginReturnPromise);
+           CAP_PLUGIN_METHOD(updateClusterIcon, CAPPluginReturnPromise);
            CAP_PLUGIN_METHOD(moveCamera, CAPPluginReturnPromise);
            CAP_PLUGIN_METHOD(addMarker, CAPPluginReturnPromise);
            CAP_PLUGIN_METHOD(addMarkers, CAPPluginReturnPromise);
@@ -18,4 +20,6 @@ CAP_PLUGIN(CapacitorGoogleMaps, "CapacitorGoogleMaps",
            CAP_PLUGIN_METHOD(didTapMarker, CAPPluginReturnCallback);
            CAP_PLUGIN_METHOD(didTapMyLocationButton, CAPPluginReturnCallback);
            CAP_PLUGIN_METHOD(didTapMyLocationDot, CAPPluginReturnCallback);
+           CAP_PLUGIN_METHOD(didTapCluster, CAPPluginReturnCallback);
+           CAP_PLUGIN_METHOD(cameraIdleAtPosition, CAPPluginReturnCallback);
 )

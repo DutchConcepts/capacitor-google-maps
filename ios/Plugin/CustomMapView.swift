@@ -1,6 +1,7 @@
 import UIKit
 import Capacitor
 import GoogleMaps
+import GoogleMapsUtils
 
 class CustomMapView: UIViewController, GMSMapViewDelegate {
     var customMapViewEvents: CustomMapViewEvents!;
@@ -26,14 +27,23 @@ class CustomMapView: UIViewController, GMSMapViewDelegate {
     var preventDefaultForDidTapMyLocationButton: Bool = false;
 
     var savedCallbackIdForDidTapMyLocationDot: String!;
+    
+    var savedCallbackIdForCameraIdleAtPosition: String!;
+    
+    var savedCallbackIdForDidTapCluster: String!;
+    var preventDefaultForDidTapCluster: Bool = false;
+    
+    var showMarkers: (()->())?
 
     static var EVENT_DID_TAP_INFO_WINDOW: String = "didTapInfoWindow";
     static var EVENT_DID_CLOSE_INFO_WINDOW: String = "didCloseInfoWindow";
     static var EVENT_DID_TAP_MAP: String = "didTapMap";
     static var EVENT_DID_LONG_PRESS_MAP: String = "didLongPressMap";
     static var EVENT_DID_TAP_MARKER: String = "didTapMarker";
+    static var EVENT_DID_TAP_CLUSTER: String = "didTapCluster";
     static var EVENT_DID_TAP_MY_LOCATION_BUTTON: String = "didTapMyLocationButton";
     static var EVENT_DID_TAP_MY_LOCATION_DOT: String = "didTapMyLocationDot";
+    static var EVENT_CAMERA_IDLE_AT_POSITION: String = "cameraIdleAtPosition"
 
     var boundingRect = BoundingRect();
     var mapCameraPosition = MapCameraPosition();
@@ -119,6 +129,10 @@ class CustomMapView: UIViewController, GMSMapViewDelegate {
                 preventDefaultForDidTapMyLocationButton = preventDefault ?? false;
             } else if (eventName == CustomMapView.EVENT_DID_TAP_MY_LOCATION_DOT) {
                 savedCallbackIdForDidTapMyLocationDot = callbackId
+            } else if (eventName == CustomMapView.EVENT_CAMERA_IDLE_AT_POSITION) {
+                savedCallbackIdForDidTapMyLocationDot = callbackId
+            } else if (eventName == CustomMapView.EVENT_DID_TAP_CLUSTER) {
+                savedCallbackIdForDidTapMyLocationDot = callbackId
             }
         }
     }
@@ -150,13 +164,28 @@ class CustomMapView: UIViewController, GMSMapViewDelegate {
             customMapViewEvents.resultForCallbackId(callbackId: savedCallbackIdForDidLongPressMap, result: result);
         }
     }
-
+    
     internal func mapView(_ mapView: GMSMapView, didTap marker: GMSMarker) -> Bool {
-        if (customMapViewEvents != nil && savedCallbackIdForDidTapMarker != nil) {
-            let result: PluginCallResultData = CustomMarker.getResultForMarker(marker);
-            customMapViewEvents.resultForCallbackId(callbackId: savedCallbackIdForDidTapMarker, result: result);
+        if marker is GMUCluster {
+            if (customMapViewEvents != nil && savedCallbackIdForDidTapCluster != nil) {
+                let result: PluginCallResultData = CustomMarker.getResultForMarker(marker);
+                customMapViewEvents.resultForCallbackId(callbackId: savedCallbackIdForDidTapCluster, result: result);
+            }
+            return preventDefaultForDidTapCluster;
+        } else {
+            if (customMapViewEvents != nil && savedCallbackIdForDidTapMarker != nil) {
+                let result: PluginCallResultData = CustomMarker.getResultForMarker(marker);
+                customMapViewEvents.resultForCallbackId(callbackId: savedCallbackIdForDidTapMarker, result: result);
+            }
+            return preventDefaultForDidTapMarker;
         }
-        return preventDefaultForDidTapMarker;
+    }
+    
+    internal func mapView(_ mapView: GMSMapView, idleAt position: GMSCameraPosition) {
+        if (customMapViewEvents != nil && savedCallbackIdForCameraIdleAtPosition != nil) {
+            let result: PluginCallResultData = self.getResultForCameraBounds(mapView: mapView);
+            customMapViewEvents.resultForCallbackId(callbackId: savedCallbackIdForCameraIdleAtPosition, result: result);
+        }
     }
 
     internal func mapView(_ mapView: GMSMapView, didTapMyLocation coordinate: CLLocationCoordinate2D) {
@@ -178,6 +207,24 @@ class CustomMapView: UIViewController, GMSMapViewDelegate {
             "position": [
                 "latitude": coordinate.latitude,
                 "longitude": coordinate.longitude
+            ]
+        ]
+    }
+    
+    private func getResultForCameraBounds(mapView: GMSMapView) -> PluginCallResultData {
+        let camView = mapView.projection.visibleRegion()
+        let cameraBounds = GMSCoordinateBounds(region: camView)
+        
+        return [
+            "coordinateBounds": [
+                "northEast": [
+                    "latitude": cameraBounds.northEast.latitude,
+                    "longitude": cameraBounds.northEast.longitude
+                ],
+                "southWest": [
+                    "latitude": cameraBounds.southWest.latitude,
+                    "longitude": cameraBounds.southWest.longitude
+                ]
             ]
         ]
     }

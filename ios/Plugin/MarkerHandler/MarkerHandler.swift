@@ -1,0 +1,79 @@
+//
+//  MarkerHandler.swift
+//  Capacitor
+//
+//  Created by Elanwave on 18.3.22..
+//
+
+import GoogleMapsUtils
+
+final class MarkerHandler: NSObject {
+    var shouldClusterMarkers: Bool = true
+    var shouldCacheMarkers: Bool = true
+    var shouldPresentMarkersOnCameraChange: Bool {
+        shouldCacheMarkers
+    }
+    
+    let urlHeart = "https://www.iconpacks.net/icons/1/free-icon-heart-492.png"
+    let urlHand = "https://www.iconpacks.net/icons/1/free-icon-click-1263.png"
+    
+    private var clusterManagers = [String : GMUClusterManager]()
+    var clusterIcon: UIImage?
+    
+    private var markerCache: [String: Set<CustomMarker>] = [:]
+    
+    func addClusterManager(with customMapView: CustomMapView) {
+        let algorithm = GMUNonHierarchicalDistanceBasedAlgorithm()
+        let renderer = GMUDefaultClusterRenderer(mapView: customMapView.GMapView,
+                                                 clusterIconGenerator: self)
+        let clusterManager = GMUClusterManager(map:customMapView.GMapView, algorithm: algorithm,
+                                               renderer: renderer)
+        self.clusterManagers[customMapView.id] = clusterManager
+        clusterManager.setMapDelegate(customMapView)
+    }
+    
+    func showMarkers(markers: [CustomMarker]?, for map: String) {
+        let camView = map.projection.visibleRegion()
+        let cameraBounds = GMSCoordinateBounds(region: camView)
+    }
+    
+    func cachedMarkers(for mapId: String) -> [CustomMarker] {
+        markerCache[mapId] ?? []
+    }
+    
+    func cluster(_ markers: [CustomMarker], mapId: String) {
+        guard let clusterManager = clusterManagers[mapId] else { return }
+        clusterManager.clearItems()
+        clusterManager.add(markers)
+        clusterManager.cluster()
+    }
+    
+    func addMarker(_ marker: CustomMarker, mapId: String) {
+        guard var cache = markerCache[mapId] else {
+            var cache = Set<CustomMarker>()
+            cache.insert(marker)
+            markerCache[mapId] = cache
+            return
+        }
+        cache.insert(marker)
+    }
+    
+    func removeMarker(_ marker: CustomMarker, mapId: String) {
+        guard var cache = markerCache[mapId] else { return }
+        cache.remove(marker)
+    }
+}
+
+extension MarkerHandler: GMUClusterIconGenerator {
+    public func icon(forSize size: UInt) -> UIImage! {
+        if size == 1 {
+            return clusterIcon?.resize(targetSize: CGSize(width: 30, height: 30))
+        } else if size < 50 {
+            return clusterIcon?.resize(targetSize: CGSize(width: 40, height: 40))?.addText(NSString(format: "%d", size), atPoint: .zero)
+        } else if size < 200 {
+            return clusterIcon?.resize(targetSize: CGSize(width: 50, height: 50))?.addText(NSString(format: "%d", size), atPoint: .zero)
+        } else {
+            return clusterIcon?.resize(targetSize: CGSize(width: 60, height: 60))?.addText(NSString(format: "%d", size), atPoint: .zero)
+        }
+    }
+}

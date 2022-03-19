@@ -11,6 +11,8 @@ public class CapacitorGoogleMaps: CustomMapViewEvents {
     var customMapViews = [String : CustomMapView]();
 
     var customMarkers = [String : CustomMarker]();
+    
+    let markerHandler = MarkerHandler()
 
     @objc func initialize(_ call: CAPPluginCall) {
 
@@ -47,7 +49,18 @@ public class CapacitorGoogleMaps: CustomMapViewEvents {
             self.bridge?.viewController?.view.addSubview(customMapView.view)
             self.bridge?.viewController?.view.sendSubviewToBack(customMapView.view)
             self.setupWebView()
-
+     
+            self.imageCache.image(at: self.urlHand) { image in
+                self.markerHandler.clusterIcon = image
+                self.markerHandler.addClusterManager(with: customMapView)
+            }
+            
+            if self.markerHandler.shouldPresentMarkersOnCameraChange {
+                customMapView.showMarkers = { [weak self] in
+                    self?.showMarkers(mapId: customMapView.id)
+                }
+            }
+            
             customMapView.GMapView.delegate = customMapView;
 
             self.customMapViews[customMapView.id] = customMapView
@@ -113,9 +126,10 @@ public class CapacitorGoogleMaps: CustomMapViewEvents {
             if let url = call.getObject("icon")?["url"] as? String {
                 self.imageCache.image(at: url) { image in
                     marker.icon = image
+                    guard self.markerHandler.shouldCacheMarkers else { return }
+                    self.markerHandler.addMarker(marker, mapId: mapId)
                 }
             }
-            
             call.resolve(CustomMarker.getResultForMarker(marker))
         }
     }
@@ -131,25 +145,52 @@ public class CapacitorGoogleMaps: CustomMapViewEvents {
             
             let markers = List<JSValue>(elements: call.getArray("markers", []))
             self.addMarker(node: markers.first, mapView: customMapView)
-            
             call.resolve()
         }
     }
-
+    
     @objc func removeMarker(_ call: CAPPluginCall) {
         let markerId: String = call.getString("markerId", "");
-
+        
         DispatchQueue.main.async {
-            let customMarker = self.customMarkers[markerId];
-
-            if (customMarker != nil) {
-                customMarker?.map = nil;
-                self.customMarkers[markerId] = nil;
-                call.resolve();
-            } else {
+            guard let customMarker = self.customMarkers[markerId] else {
                 call.reject("marker not found");
+                return
             }
+            let mapArray = self.customMapViews.map { $0.value }
+            if let markerMap = customMarker.map,
+               let map = mapArray.first(where: { markerMap.isEqual($0.GMapView) }) {
+                self.markerHandler.removeMarker(customMarker, mapId: map.id)
+            }
+            customMarker.map = nil;
+            self.customMarkers[markerId] = nil;
+            call.resolve();
         }
+    }
+    
+    func showMarkers(mapId: String) {
+        guard let customMap = customMapViews[mapId] else { return }
+        
+        if markerHandler.shouldCacheMarkers {
+            markerHandler.showCachedMarkers(for: customMap)
+        } else {
+            let visibleMarkers: [CustomMarker] = customMarkers.map {
+                let marker = $0.value
+                return markerHandler.prepareForPresentation(marker: marker, map: customMap)
+            }
+            guard markerHandler.shouldClusterMarkers else { return }
+            visibleMarkers.forEach {
+                $0.map = nil
+            }
+            markerHandler.cluster(visibleMarkers, mapId: mapId)
+        }
+    }
+    
+    @objc
+    func cluster() {
+        guard let mapId = customMapViews.keys.first else { return }
+        markerHandler.shouldClusterMarkers = true
+        showMarkers(mapId: mapId)
     }
 
     @objc func didTapInfoWindow(_ call: CAPPluginCall) {
@@ -171,6 +212,14 @@ public class CapacitorGoogleMaps: CustomMapViewEvents {
     @objc func didTapMarker(_ call: CAPPluginCall) {
         setCallbackIdForEvent(call: call, eventName: CustomMapView.EVENT_DID_TAP_MARKER);
     }
+    
+    @objc func didTapCluster(_ call: CAPPluginCall) {
+        setCallbackIdForEvent(call: call, eventName: CustomMapView.EVENT_DID_TAP_CLUSTER);
+        print(call)
+//        guard marker is GMUCluster, markerHandler.shouldClusterMarkers else { return }
+//        mapView.animate(toLocation: marker.position)
+//        mapView.animate(toZoom: mapView.camera.zoom + 1)
+    }
 
     @objc func didTapMyLocationButton(_ call: CAPPluginCall) {
         setCallbackIdForEvent(call: call, eventName: CustomMapView.EVENT_DID_TAP_MY_LOCATION_BUTTON);
@@ -178,6 +227,11 @@ public class CapacitorGoogleMaps: CustomMapViewEvents {
 
     @objc func didTapMyLocationDot(_ call: CAPPluginCall) {
         setCallbackIdForEvent(call: call, eventName: CustomMapView.EVENT_DID_TAP_MY_LOCATION_DOT);
+    }
+    
+    @objc func cameraIdleAtPosition(_ call: CAPPluginCall) {
+        print(call)
+        setCallbackIdForEvent(call: call, eventName: CustomMapView.EVENT_CAMERA_IDLE_AT_POSITION);
     }
 
     func setCallbackIdForEvent(call: CAPPluginCall, eventName: String) {
@@ -217,12 +271,18 @@ private extension CapacitorGoogleMaps {
         
         let marker = CustomMarker()
         marker.updateFromJSObject(preferences: preferences)
-        marker.map = mapView.GMapView
+        
         self.customMarkers[marker.id] = marker
         if let url = (markerObject["icon"] as? JSObject)?["url"] as? String {
             imageCache.image(at: url) { [weak self] image in
+                guard let self = self else { return }
                 marker.icon = image
-                self?.addMarker(node: node.next, mapView: mapView)
+                if !self.markerHandler.shouldClusterMarkers {
+                    marker.map = mapView.GMapView
+                }
+                self.addMarker(node: node.next, mapView: mapView)
+                guard self.markerHandler.shouldCacheMarkers else { return }
+                self.markerHandler.addMarker(marker, mapId: mapView.id)
             }
         }
     }
