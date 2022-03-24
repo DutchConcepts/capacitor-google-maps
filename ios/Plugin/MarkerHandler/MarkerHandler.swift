@@ -1,10 +1,3 @@
-//
-//  MarkerHandler.swift
-//  Capacitor
-//
-//  Created by Elanwave on 18.3.22..
-//
-
 import GoogleMapsUtils
 
 final class MarkerHandler: NSObject {

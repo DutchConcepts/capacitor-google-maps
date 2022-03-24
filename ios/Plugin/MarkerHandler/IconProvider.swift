@@ -1,10 +1,3 @@
-//
-//  IconProvider.swift
-//  Capacitor
-//
-//  Created by Elanwave on 21.3.22..
-//
-
 import GoogleMapsUtils
 
 class IconProvider: NSObject, GMUClusterIconGenerator {
