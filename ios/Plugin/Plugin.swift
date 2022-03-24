@@ -1,18 +1,19 @@
 import Foundation
 import Capacitor
 import GoogleMaps
+import GoogleMapsUtils
 import SDWebImage
+import UIKit
 
 @objc(CapacitorGoogleMaps)
 public class CapacitorGoogleMaps: CustomMapViewEvents {
-
     var GOOGLE_MAPS_KEY: String = "";
 
     var customMapViews = [String : CustomMapView]();
-
-    var customMarkers = [String : CustomMarker]();
     
     let markerHandler = MarkerHandler()
+
+    var customMarkers = [String : CustomMarker]();
 
     @objc func initialize(_ call: CAPPluginCall) {
 
@@ -22,8 +23,9 @@ public class CapacitorGoogleMaps: CustomMapViewEvents {
             call.reject("GOOGLE MAPS API key missing!")
             return
         }
-
+        
         GMSServices.provideAPIKey(self.GOOGLE_MAPS_KEY)
+        
         call.resolve([
             "initialized": true
         ])
@@ -49,10 +51,16 @@ public class CapacitorGoogleMaps: CustomMapViewEvents {
             self.bridge?.viewController?.view.addSubview(customMapView.view)
             self.bridge?.viewController?.view.sendSubviewToBack(customMapView.view)
             self.setupWebView()
-     
-            self.imageCache.image(at: self.urlHand) { image in
-                self.markerHandler.clusterIcon = image
-                self.markerHandler.addClusterManager(with: customMapView)
+            
+            self.addButtons(customMapView: customMapView)
+            
+            customMapView.GMapView.delegate = customMapView
+            self.customMapViews[customMapView.id] = customMapView
+            
+            if self.markerHandler.shouldClusterMarkers {
+                self.markerHandler.updateClusterIcon {
+                    self.markerHandler.addClusterManager(with: customMapView)
+                }
             }
             
             if self.markerHandler.shouldPresentMarkersOnCameraChange {
@@ -60,29 +68,63 @@ public class CapacitorGoogleMaps: CustomMapViewEvents {
                     self?.showMarkers(mapId: customMapView.id)
                 }
             }
+        }
+    }
+    
+    func addButtons(customMapView: CustomMapView) {
+        let clusterButton = UIButton()
+        clusterButton.addTarget(self, action: #selector(self.cluster), for: .touchUpInside)
+        clusterButton.setTitle("Cluster", for: .normal)
+        clusterButton.frame = CGRect(x: 20, y: 50, width: 100, height: 30)
+        clusterButton.backgroundColor = .red
+        customMapView.GMapView.addSubview(clusterButton)
+    }
+   
+    func showMarkers(mapId: String) {
+        guard let map = customMapViews[mapId]?.GMapView else { return }
+        let camView = map.projection.visibleRegion()
+        let cameraBounds = GMSCoordinateBounds(region: camView)
+        let markers = markerHandler.shouldCacheMarkers ? markerHandler.cachedMarkers(for: mapId) : Array(customMarkers.values)
+        
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
             
-            customMapView.GMapView.delegate = customMapView;
-
-            self.customMapViews[customMapView.id] = customMapView
+            let visibleMarkers: [CustomMarker] = markers.filter {
+                $0.map = nil
+                if self.markerHandler.shouldPresentMarkersOnCameraChange {
+                    return cameraBounds.contains($0.position)
+                }
+                return true
+            }
+            guard self.markerHandler.shouldClusterMarkers else {
+                visibleMarkers.forEach { $0.map = map }
+                return
+            }
+            self.markerHandler.cluster(visibleMarkers, mapId: mapId)
         }
     }
 
+
     @objc func updateMap(_ call: CAPPluginCall) {
-        let mapId: String = call.getString("mapId")!;
-
-        DispatchQueue.main.async {
-            let customMapView = self.customMapViews[mapId];
-
-            if (customMapView != nil) {
-                let preferences = call.getObject("preferences", JSObject());
-                customMapView?.mapPreferences.updateFromJSObject(preferences);
-
-                customMapView?.invalidateMap();
-            } else {
-                call.reject("map not found");
-            }
+        guard let mapId = call.getString("mapId") else {
+            call.reject("map not found")
+            return
         }
 
+        DispatchQueue.main.async {
+            let customMapView = self.customMapViews[mapId]
+
+            if (customMapView != nil) {
+                let preferences = call.getObject("preferences", JSObject())
+                CATransaction.begin()
+                customMapView?.mapPreferences.updateFromJSObject(preferences)
+
+                customMapView?.invalidateMap()
+                CATransaction.commit()
+            } else {
+                call.reject("map not found")
+            }
+        }
     }
     
     @objc func moveCamera(_ call: CAPPluginCall) {
@@ -101,10 +143,12 @@ public class CapacitorGoogleMaps: CustomMapViewEvents {
             let cameraPosition = call.getObject("cameraPosition", JSObject())
             mapCameraPosition.updateFromJSObject(cameraPosition)
             
+            CATransaction.begin()
             let camera = GMSMutableCameraPosition.camera(withLatitude: mapCameraPosition.latitude,
                                                          longitude: mapCameraPosition.longitude,
                                                          zoom: customMapView.GMapView.camera.zoom)
             customMapView.GMapView.animate(to: camera)
+            CATransaction.commit()
             
             call.resolve(cameraPosition)
         }
@@ -120,18 +164,47 @@ public class CapacitorGoogleMaps: CustomMapViewEvents {
             }
             let preferences = call.getObject("preferences", JSObject())
             let marker = CustomMarker()
+            
             marker.updateFromJSObject(preferences: preferences)
-            marker.map = customMapView.GMapView
+            
             self.customMarkers[marker.id] = marker
             if let url = call.getObject("icon")?["url"] as? String {
                 self.imageCache.image(at: url) { image in
                     marker.icon = image
-                    guard self.markerHandler.shouldCacheMarkers else { return }
-                    self.markerHandler.addMarker(marker, mapId: mapId)
+                    if self.markerHandler.shouldCacheMarkers {
+                        self.markerHandler.addMarker(marker, mapId: customMapView.id)
+                    }
+                    guard self.markerHandler.shouldClusterMarkers else {
+                        marker.map = customMapView.GMapView
+                        return
+                    }
+                    let manager = self.markerHandler.clusterManager(for: mapId)
+                    manager?.add(marker)
                 }
             }
             call.resolve(CustomMarker.getResultForMarker(marker))
         }
+    }
+    
+    @objc func cluster(_ call: CAPPluginCall) {
+        let mapId: String = call.getString("mapId", "")
+        markerHandler.shouldClusterMarkers = true
+        for marker in self.customMarkers {
+            marker.value.map = nil
+        }
+        
+        if markerHandler.clusterManager(for: mapId) == nil {
+            guard let map = customMapViews[mapId] else { return }
+            markerHandler.addClusterManager(with: map)
+        }
+        
+        markerHandler.updateClusterIcon { [weak self] in
+            self?.showMarkers(mapId: mapId)
+        }
+    }
+    
+    @objc func updateClusterIcon() {
+        self.markerHandler.updateClusterIcon(completion: nil)
     }
     
     @objc func addMarkers(_ call: CAPPluginCall) {
@@ -145,52 +218,25 @@ public class CapacitorGoogleMaps: CustomMapViewEvents {
             
             let markers = List<JSValue>(elements: call.getArray("markers", []))
             self.addMarker(node: markers.first, mapView: customMapView)
+            
             call.resolve()
         }
     }
-    
+
     @objc func removeMarker(_ call: CAPPluginCall) {
         let markerId: String = call.getString("markerId", "");
-        
+
         DispatchQueue.main.async {
-            guard let customMarker = self.customMarkers[markerId] else {
+            let customMarker = self.customMarkers[markerId];
+
+            if (customMarker != nil) {
+                customMarker?.map = nil;
+                self.customMarkers[markerId] = nil;
+                call.resolve();
+            } else {
                 call.reject("marker not found");
-                return
             }
-            let mapArray = self.customMapViews.map { $0.value }
-            if let markerMap = customMarker.map,
-               let map = mapArray.first(where: { markerMap.isEqual($0.GMapView) }) {
-                self.markerHandler.removeMarker(customMarker, mapId: map.id)
-            }
-            customMarker.map = nil;
-            self.customMarkers[markerId] = nil;
-            call.resolve();
         }
-    }
-    
-    func showMarkers(mapId: String) {
-        guard let customMap = customMapViews[mapId] else { return }
-        
-        if markerHandler.shouldCacheMarkers {
-            markerHandler.showCachedMarkers(for: customMap)
-        } else {
-            let visibleMarkers: [CustomMarker] = customMarkers.map {
-                let marker = $0.value
-                return markerHandler.prepareForPresentation(marker: marker, map: customMap)
-            }
-            guard markerHandler.shouldClusterMarkers else { return }
-            visibleMarkers.forEach {
-                $0.map = nil
-            }
-            markerHandler.cluster(visibleMarkers, mapId: mapId)
-        }
-    }
-    
-    @objc
-    func cluster() {
-        guard let mapId = customMapViews.keys.first else { return }
-        markerHandler.shouldClusterMarkers = true
-        showMarkers(mapId: mapId)
     }
 
     @objc func didTapInfoWindow(_ call: CAPPluginCall) {
@@ -212,14 +258,6 @@ public class CapacitorGoogleMaps: CustomMapViewEvents {
     @objc func didTapMarker(_ call: CAPPluginCall) {
         setCallbackIdForEvent(call: call, eventName: CustomMapView.EVENT_DID_TAP_MARKER);
     }
-    
-    @objc func didTapCluster(_ call: CAPPluginCall) {
-        setCallbackIdForEvent(call: call, eventName: CustomMapView.EVENT_DID_TAP_CLUSTER);
-        print(call)
-//        guard marker is GMUCluster, markerHandler.shouldClusterMarkers else { return }
-//        mapView.animate(toLocation: marker.position)
-//        mapView.animate(toZoom: mapView.camera.zoom + 1)
-    }
 
     @objc func didTapMyLocationButton(_ call: CAPPluginCall) {
         setCallbackIdForEvent(call: call, eventName: CustomMapView.EVENT_DID_TAP_MY_LOCATION_BUTTON);
@@ -229,16 +267,14 @@ public class CapacitorGoogleMaps: CustomMapViewEvents {
         setCallbackIdForEvent(call: call, eventName: CustomMapView.EVENT_DID_TAP_MY_LOCATION_DOT);
     }
     
-    @objc func cameraIdleAtPosition(_ call: CAPPluginCall) {
-        print(call)
-        setCallbackIdForEvent(call: call, eventName: CustomMapView.EVENT_CAMERA_IDLE_AT_POSITION);
+    @objc func didTapCluster(_ call: CAPPluginCall) {
+        setCallbackIdForEvent(call: call, eventName: CustomMapView.EVENT_DID_TAP_CLUSTER);
     }
 
     func setCallbackIdForEvent(call: CAPPluginCall, eventName: String) {
         call.keepAlive = true;
         let callbackId = call.callbackId;
         guard let mapId = call.getString("mapId") else { return };
-
         let customMapView: CustomMapView = customMapViews[mapId]!;
 
         let preventDefault: Bool = call.getBool("preventDefault", false);
@@ -259,7 +295,6 @@ public class CapacitorGoogleMaps: CustomMapViewEvents {
             call?.resolve();
         }
     }
-
 }
 
 private extension CapacitorGoogleMaps {
@@ -271,18 +306,29 @@ private extension CapacitorGoogleMaps {
         
         let marker = CustomMarker()
         marker.updateFromJSObject(preferences: preferences)
-        
-        self.customMarkers[marker.id] = marker
+     
+        customMarkers[marker.id] = marker
         if let url = (markerObject["icon"] as? JSObject)?["url"] as? String {
             imageCache.image(at: url) { [weak self] image in
+                
                 guard let self = self else { return }
                 marker.icon = image
-                if !self.markerHandler.shouldClusterMarkers {
-                    marker.map = mapView.GMapView
+                
+                if self.markerHandler.shouldCacheMarkers {
+                    self.markerHandler.addMarker(marker, mapId: mapView.id)
                 }
-                self.addMarker(node: node.next, mapView: mapView)
-                guard self.markerHandler.shouldCacheMarkers else { return }
-                self.markerHandler.addMarker(marker, mapId: mapView.id)
+                guard self.markerHandler.shouldClusterMarkers else {
+                    marker.map = mapView.GMapView
+                    self.addMarker(node: node.next, mapView: mapView)
+                    return
+                }
+                let manager = self.markerHandler.clusterManager(for: mapView.id)
+                manager?.add(marker)
+                guard node.next == nil else {
+                    self.addMarker(node: node.next, mapView: mapView)
+                    return
+                }
+                self.showMarkers(mapId: mapView.id)
             }
         }
     }
@@ -292,8 +338,17 @@ private extension CapacitorGoogleMaps {
         self.webView?.backgroundColor = .clear
         self.webView?.scrollView.backgroundColor = .clear
         self.webView?.scrollView.isOpaque = false
+        self.webView?.scrollView.canCancelContentTouches = false
     }
 }
+
+extension CapacitorGoogleMaps: ImageCachable {
+    var imageCache: ImageURLLoadable {
+        SDWebImageCache.shared
+    }
+}
+
+
 
 extension WKWebView {
     open override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
@@ -301,18 +356,11 @@ extension WKWebView {
             let convertedPoint = self.convert(point, to: view)
             guard view is GMSMapView,
                   let mapView = view.hitTest(convertedPoint, with: event),
-                  scrollView.layer.pixelColorAtPoint(point: point).cgColor.alpha == 0.0
-                    // Alternative condition - in case of issues with map touch, disable previous and enable next line
-                    //layer.pixelColorAtPoint(point: point) == mapView.layer.pixelColorAtPoint(point: convertedPoint)
+                  scrollView.layer.pixelColorAtPoint(point: self.convert(point, to: scrollView)).cgColor.alpha == 0.0
+                  //layer.pixelColorAtPoint(point: point) == mapView.layer.pixelColorAtPoint(point: convertedPoint)
             else { continue }
             return mapView
         }
         return super.hitTest(point, with: event)
-    }
-}
-
-extension CapacitorGoogleMaps: ImageCachable {
-    var imageCache: ImageURLLoadable {
-        SDWebImageCache.shared
     }
 }

@@ -182,6 +182,7 @@ class CustomMapView: UIViewController, GMSMapViewDelegate {
     }
     
     internal func mapView(_ mapView: GMSMapView, idleAt position: GMSCameraPosition) {
+        var showMarkers: (()->())?
         if (customMapViewEvents != nil && savedCallbackIdForCameraIdleAtPosition != nil) {
             let result: PluginCallResultData = self.getResultForCameraBounds(mapView: mapView);
             customMapViewEvents.resultForCallbackId(callbackId: savedCallbackIdForCameraIdleAtPosition, result: result);

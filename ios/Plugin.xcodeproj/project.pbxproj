@@ -16,6 +16,7 @@
 		50ADFFA82020EE4F00D50D53 /* Plugin.m in Sources */ = {isa = PBXBuildFile; fileRef = 50ADFFA72020EE4F00D50D53 /* Plugin.m */; };
 		50E1A94820377CB70090CE1A /* Plugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50E1A94720377CB70090CE1A /* Plugin.swift */; };
 		E751F68B27E4D15100ABA3C3 /* MarkerHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = E751F68A27E4D15100ABA3C3 /* MarkerHandler.swift */; };
+		E751F69627E8832F00ABA3C3 /* IconProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = E751F69527E8832F00ABA3C3 /* IconProvider.swift */; };
 		FE57559126E111230006B72B /* MapPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE57559026E111230006B72B /* MapPreferences.swift */; };
 		FE57559A26E111A40006B72B /* BoundingRect.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE57559226E111A20006B72B /* BoundingRect.swift */; };
 		FE57559B26E111A40006B72B /* CustomMarker.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE57559326E111A20006B72B /* CustomMarker.swift */; };
@@ -52,6 +53,7 @@
 		91781294A431A2A7CC6EB714 /* Pods-Plugin.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Plugin.release.xcconfig"; path = "Pods/Target Support Files/Pods-Plugin/Pods-Plugin.release.xcconfig"; sourceTree = "<group>"; };
 		96ED1B6440D6672E406C8D19 /* Pods-PluginTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-PluginTests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-PluginTests/Pods-PluginTests.debug.xcconfig"; sourceTree = "<group>"; };
 		E751F68A27E4D15100ABA3C3 /* MarkerHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MarkerHandler.swift; sourceTree = "<group>"; };
+		E751F69527E8832F00ABA3C3 /* IconProvider.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = IconProvider.swift; sourceTree = "<group>"; };
 		F65BB2953ECE002E1EF3E424 /* Pods-PluginTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-PluginTests.release.xcconfig"; path = "Pods/Target Support Files/Pods-PluginTests/Pods-PluginTests.release.xcconfig"; sourceTree = "<group>"; };
 		F6753A823D3815DB436415E3 /* Pods_PluginTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_PluginTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		FE57559026E111230006B72B /* MapPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapPreferences.swift; sourceTree = "<group>"; };
@@ -161,6 +163,7 @@
 		E751F68927E4D15100ABA3C3 /* MarkerHandler */ = {
 			isa = PBXGroup;
 			children = (
+				E751F69527E8832F00ABA3C3 /* IconProvider.swift */,
 				E751F68A27E4D15100ABA3C3 /* MarkerHandler.swift */,
 			);
 			path = MarkerHandler;
@@ -390,6 +393,7 @@
 				FE57559B26E111A40006B72B /* CustomMarker.swift in Sources */,
 				50E1A94820377CB70090CE1A /* Plugin.swift in Sources */,
 				FE57559F26E111A40006B72B /* MapPreferencesControls.swift in Sources */,
+				E751F69627E8832F00ABA3C3 /* IconProvider.swift in Sources */,
 				50ADFFA82020EE4F00D50D53 /* Plugin.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
