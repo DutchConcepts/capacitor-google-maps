@@ -1,10 +1,3 @@
-//
-//  NativeImageCache.swift
-//  App
-//
-//  Created by Elanwave on 3.1.22..
-//
-
 import UIKit
 
 final class NativeImageCache: ImageURLLoadable {

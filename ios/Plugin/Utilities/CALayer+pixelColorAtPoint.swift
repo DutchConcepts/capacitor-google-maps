@@ -1,10 +1,3 @@
-//
-//  CALayer+pixelColorAtPoint.swift
-//  CapacitorCommunityCapacitorGooglemapsNative
-//
-//  Created by Elanwave on 14.1.22..
-//
-
 extension CALayer {
     func pixelColorAtPoint(point:CGPoint) -> Bool {
         var pixel: [UInt8] = [0, 0, 0, 0]

@@ -1,10 +1,3 @@
-//
-//  UIImage+resize.swift
-//  Capacitor
-//
-//  Created by Elanwave on 9.1.22..
-//
-
 import UIKit
 
 extension UIImage {

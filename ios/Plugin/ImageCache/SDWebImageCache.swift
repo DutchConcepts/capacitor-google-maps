@@ -1,10 +1,3 @@
-//
-//  SDImageCache.swift
-//  App
-//
-//  Created by Elanwave on 3.1.22..
-//
-
 import SDWebImage
 
 final class SDWebImageCache: ImageURLLoadable {

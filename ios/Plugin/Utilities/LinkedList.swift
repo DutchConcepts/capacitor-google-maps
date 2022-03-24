@@ -1,10 +1,3 @@
-//
-//  ConnectedList.swift
-//  CapacitorCommunityCapacitorGooglemapsNative
-//
-//  Created by Elanwave on 10.1.22..
-//
-
 import Foundation
 
 public class Node<T> {
