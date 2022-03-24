@@ -349,22 +349,21 @@ public class CapacitorGoogleMaps extends Plugin implements CustomMapViewEvents  
                 if (customMapView != null) {
                     final MapCameraPosition mapCameraPosition = customMapView.mapCameraPosition;
 
-                    CameraPosition previousCameraPosition = null;
-                    Boolean usePreviousCameraPositionAsBase = call.getBoolean("usePreviousCameraPositionAsBase", false);
-                    if (usePreviousCameraPositionAsBase == null || !usePreviousCameraPositionAsBase) {
-                        // if we should not use the previous one,
-                        // use the current one
-                        previousCameraPosition = customMapView.getCameraPosition();
+                    CameraPosition currentCameraPosition = null;
+
+                    Boolean useCurrentCameraPositionAsBase = call.getBoolean("useCurrentCameraPositionAsBase", true);
+
+                    if (useCurrentCameraPositionAsBase != null && useCurrentCameraPositionAsBase) {
+                        currentCameraPosition = customMapView.getCameraPosition();
                     }
 
-                    mapCameraPosition.updateFromJSObject(call.getObject("cameraPosition"), previousCameraPosition);
+                    mapCameraPosition.updateFromJSObject(call.getObject("cameraPosition"), currentCameraPosition);
 
                     Integer duration = call.getInt("duration", 0);
 
-                    // @TODO: add move listeners for movement
-                    JSObject result = customMapView.moveCamera(duration);
+                    customMapView.moveCamera(duration);
 
-                    call.resolve(result);
+                    call.resolve();
                 } else {
                     call.reject("map not found");
                 }
@@ -483,10 +482,8 @@ public class CapacitorGoogleMaps extends Plugin implements CustomMapViewEvents  
                 CustomMapView customMapView = customMapViews.get(mapId);
 
                 if (customMapView != null) {
-                    JSObject preferences = JSObjectDefaults.getJSObjectSafe(call, "preferences", new JSObject());
-
                     CustomMarker customMarker = new CustomMarker();
-                    customMarker.updateFromJSObject(preferences);
+                    customMarker.updateFromJSObject(call.getData());
 
                     Marker marker = customMapView.addMarker(customMarker);
 

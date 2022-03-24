@@ -1,12 +1,12 @@
 {
-  "name": "@capacitor-community/capacitor-googlemaps-native",
-  "version": "2.0.0-alpha.5",
+  "name": "@capacitor-community/google-maps",
+  "version": "2.0.0-beta.1",
   "description": "Plugin using native Maps API for Android and iOS.",
   "main": "dist/esm/index.js",
   "module": "dist/esm/index.js",
   "types": "dist/esm/index.d.ts",
   "scripts": {
-    "docgen": "docgen --api CapacitorGoogleMapsPlugin --output-readme API_REFERENCE.md",
+    "docgen": "docgen --api CapacitorGoogleMapsPlugin --output-readme ./docs/api.md",
     "build": "npm run clean && tsc",
     "clean": "rimraf ./dist",
     "watch": "tsc --watch",
@@ -21,7 +21,7 @@
   },
   "devDependencies": {
     "@capacitor/android": "^3.0.0",
-    "@capacitor/docgen": "0.0.17",
+    "@capacitor/docgen": "git+https://github.com/DutchConcepts/capacitor-docgen.git",
     "@capacitor/ios": "^3.0.0",
     "all-contributors-cli": "^6.20.0",
     "rimraf": "^3.0.0",
@@ -31,7 +31,7 @@
     "dist/",
     "ios/",
     "android/",
-    "CapacitorCommunityCapacitorGooglemapsNative.podspec"
+    "CapacitorCommunityGoogleMaps.podspec"
   ],
   "keywords": [
     "capacitor",
@@ -48,9 +48,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/capacitor-community/capacitor-googlemaps-native"
+    "url": "git+https://github.com/capacitor-community/google-maps.git"
   },
   "bugs": {
-    "url": "https://github.com/capacitor-community/capacitor-googlemaps-native/issues"
+    "url": "https://github.com/capacitor-community/google-maps/issues"
+  },
+  "homepage": "https://github.com/capacitor-community/google-maps#readme",
+  "directories": {
+    "doc": "docs"
   }
 }

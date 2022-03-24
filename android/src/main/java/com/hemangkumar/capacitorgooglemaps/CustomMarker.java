@@ -3,12 +3,13 @@ package com.hemangkumar.capacitorgooglemaps;
 import androidx.annotation.NonNull;
 
 import com.getcapacitor.JSObject;
+import com.getcapacitor.util.JSONUtils;
 import com.google.android.libraries.maps.GoogleMap;
 import com.google.android.libraries.maps.model.LatLng;
 import com.google.android.libraries.maps.model.Marker;
 import com.google.android.libraries.maps.model.MarkerOptions;
 
-import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.UUID;
 
@@ -21,19 +22,23 @@ public class CustomMarker {
     private final MarkerOptions markerOptions = new MarkerOptions();
     private JSObject tag = new JSObject();
 
-    public void updateFromJSObject(JSObject preferences) {
-        final JSObject position = JSObjectDefaults.getJSObjectSafe(preferences, "position", new JSObject());
+    public void updateFromJSObject(JSObject marker) {
+        final JSObject position = JSObjectDefaults.getJSObjectSafe(marker, "position", new JSObject());
         final Double latitude = JSObjectDefaults.getDoubleSafe(position, "latitude", 0d);
         final Double longitude = JSObjectDefaults.getDoubleSafe(position, "longitude", 0d);
         LatLng latLng = new LatLng(latitude, longitude);
 
+        final JSObject preferences = JSObjectDefaults.getJSObjectSafe(marker, "preferences", new JSObject());
         final String title = preferences.getString("title", "");
         final String snippet = preferences.getString("snippet", "");
         final Float opacity = JSObjectDefaults.getFloatSafe(preferences, "opacity", 1f);
         final Boolean isFlat = JSObjectDefaults.getBooleanSafe(preferences,"isFlat", false);
         final Boolean isDraggable = JSObjectDefaults.getBooleanSafe(preferences,"isDraggable", false);
+        final Integer zIndex = JSObjectDefaults.getIntegerSafe(preferences,"zIndex", 0);
 
-        this.setMetadata(JSObjectDefaults.getJSObjectSafe(preferences, "metadata", new JSObject()));
+        final JSObject anchor = JSObjectDefaults.getJSObjectSafe(preferences, "anchor", new JSObject());
+        final Float anchorX = JSObjectDefaults.getFloatSafe(anchor, "x", 0.5f);
+        final Float anchorY = JSObjectDefaults.getFloatSafe(anchor, "y", 1f);
 
         this.markerOptions.position(latLng);
         this.markerOptions.title(title);
@@ -41,6 +46,10 @@ public class CustomMarker {
         this.markerOptions.alpha(opacity);
         this.markerOptions.flat(isFlat);
         this.markerOptions.draggable(isDraggable);
+        this.markerOptions.zIndex(zIndex);
+        this.markerOptions.anchor(anchorX, anchorY);
+
+        this.setMetadata(JSObjectDefaults.getJSObjectSafe(preferences, "metadata", new JSObject()));
     }
 
     public Marker addToMap(GoogleMap googleMap) {
@@ -53,6 +62,11 @@ public class CustomMarker {
         JSObject tag = new JSObject();
         // set id to tag
         tag.put("markerId", this.markerId);
+        // set anchor to tag (because it cannot be retrieved from a marker instance)
+        JSObject anchorResult = new JSObject();
+        anchorResult.put("x", this.markerOptions.getAnchorU());
+        anchorResult.put("y", this.markerOptions.getAnchorV());
+        tag.put("anchor", anchorResult);
         // then set metadata to tag
         tag.put("metadata", jsObject);
         // save in tag variable
@@ -60,45 +74,50 @@ public class CustomMarker {
     }
 
     public static JSObject getResultForMarker(Marker marker, String mapId) {
+        JSObject tag = null;
+
+        try {
+            tag = (JSObject) marker.getTag();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            tag = tag != null ? tag : new JSObject();
+        }
+
         // initialize JSObjects to return
         JSObject result = new JSObject();
-        JSObject positionResult = new JSObject();
         JSObject markerResult = new JSObject();
+        JSObject positionResult = new JSObject();
+        JSObject preferencesResult = new JSObject();
+
+        result.put("marker", markerResult);
+        markerResult.put("position", positionResult);
+        markerResult.put("preferences", preferencesResult);
 
         // get map id
-        positionResult.put("mapId", mapId);
+        markerResult.put("mapId", mapId);
+
+        // get id
+        String markerId = tag.optString("markerId", marker.getId());
+        markerResult.put("markerId", markerId);
 
         // get position values
         positionResult.put("latitude", marker.getPosition().latitude);
         positionResult.put("longitude", marker.getPosition().longitude);
 
-        // get marker specific values
-        markerResult.put("markerId", marker.getId());
-        markerResult.put("title", marker.getTitle());
-        markerResult.put("snippet", marker.getSnippet());
-        markerResult.put("opacity", marker.getAlpha());
-        markerResult.put("isFlat", marker.isFlat());
-        markerResult.put("isDraggable", marker.isDraggable());
-        markerResult.put("metadata", new JSObject());
-
-        JSObject tag = (JSObject) marker.getTag();
-        if (tag != null) {
-            // get and set markerId to marker
-            String markerId = tag.getString("markerId");
-            markerResult.put("markerId", markerId);
-
-            // get and set metadata to marker
-            try {
-                JSObject metadata = tag.getJSObject("metadata", new JSObject());
-                markerResult.put("metadata", metadata);
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-        }
-
-        // return result
-        result.put("position", positionResult);
-        result.put("marker", markerResult);
+        // get preferences
+        preferencesResult.put("title", marker.getTitle());
+        preferencesResult.put("snippet", marker.getSnippet());
+        preferencesResult.put("opacity", marker.getAlpha());
+        preferencesResult.put("isFlat", marker.isFlat());
+        preferencesResult.put("isDraggable", marker.isDraggable());
+        preferencesResult.put("zIndex", marker.getZIndex());
+        // anchor values
+        JSObject anchorResult = JSObjectDefaults.getJSObjectSafe(tag, "anchor", new JSObject());
+        preferencesResult.put("anchor", anchorResult);
+        // metadata
+        JSObject metadata = JSObjectDefaults.getJSObjectSafe(tag, "metadata", new JSObject());
+        preferencesResult.put("metadata", metadata);
 
         return result;
     }
