@@ -91,7 +91,7 @@ public class CapacitorGoogleMaps: CustomMapViewEvents {
     }
    
     func showMarkers(mapId: String) {
-        guard let map = customMapViews[mapId]?.GMapView else { return }
+        guard let map = customWebView?.customMapViews[mapId]?.GMapView else { return }
         let camView = map.projection.visibleRegion()
         let cameraBounds = GMSCoordinateBounds(region: camView)
         let markers = markerHandler.shouldCacheMarkers ? markerHandler.cachedMarkers(for: mapId) : Array(customMarkers.values)
@@ -155,17 +155,22 @@ public class CapacitorGoogleMaps: CustomMapViewEvents {
         }
         
         if markerHandler.clusterManager(for: mapId) == nil {
-            guard let map = customMapViews[mapId] else { return }
+            guard let map = self.customWebView?.customMapViews[mapId] else { return }
             markerHandler.addClusterManager(with: map)
         }
         
         markerHandler.updateClusterIcon { [weak self] in
             self?.showMarkers(mapId: mapId)
+            call.resolve()
         }
     }
     
-    @objc func updateClusterIcon() {
-        self.markerHandler.updateClusterIcon(completion: nil)
+    @objc func updateClusterIcon(_ call: CAPPluginCall) {
+        let mapId: String = call.getString("mapId", "")
+        
+        self.markerHandler.updateClusterIcon(mapId: String, icons: [Int: String]?) {
+            call.resolve()
+        }
     }
     
     @objc func moveCamera(_ call: CAPPluginCall) {
@@ -239,15 +244,15 @@ public class CapacitorGoogleMaps: CustomMapViewEvents {
         let markerId: String = call.getString("markerId", "");
 
         DispatchQueue.main.async {
-            let customMarker = self.customMarkers[markerId];
-
-            if (customMarker != nil) {
-                customMarker?.map = nil;
-                self.customMarkers[markerId] = nil;
-                call.resolve();
-            } else {
-                call.reject("marker not found");
+            guard let customMarker = self.customMarkers[markerId] else {
+                call.reject("marker not found")
+                return
             }
+            
+            self.markerHandler.removeMarker(customMarker)
+            customMarker.map = nil;
+            self.customMarkers[markerId] = nil
+            call.resolve()
         }
     }
 

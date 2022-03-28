@@ -52,11 +52,18 @@ final class MarkerHandler: NSObject {
     }
     
     func removeMarker(_ marker: CustomMarker, mapId: String) {
-        guard var cache = markerCache[mapId] else { return }
+        guard let cacheDic = markerCache.first (where: {
+            $0.value.contains(marker)
+        }) else { return }
+        
+        var cache = cacheDic.value
+        let mapId = cacheDic.key
+        
         cache.remove(marker)
+        markerCache[mapId] = cache
     }
     
-    func updateClusterIcon(completion: NoArgsClosure?) {
+    func updateClusterIcon(mapId: String, icons: [Int: String], completion: NoArgsClosure?) {
         imageCache.image(at: urlHeart) { image in
             self.clusterIcon = image
             completion?()
