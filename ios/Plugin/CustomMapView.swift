@@ -34,8 +34,6 @@ class CustomMapView: UIViewController, GMSMapViewDelegate {
 
     var savedCallbackIdForDidTapMyLocationDot: String!;
     
-    var savedCallbackIdForCameraIdleAtPosition: String!;
-    
     var savedCallbackIdForDidTapCluster: String!;
     var preventDefaultForDidTapCluster: Bool = false;
 
@@ -53,11 +51,11 @@ class CustomMapView: UIViewController, GMSMapViewDelegate {
     static var EVENT_DID_LONG_PRESS_MAP: String = "didLongPressMap";
     static var EVENT_DID_TAP_MARKER: String = "didTapMarker";
     static var EVENT_DID_TAP_CLUSTER: String = "didTapCluster";
-    static var EVENT_DID_TAP_MY_LOCATION_BUTTON: String = "didTapMyLocationButton";
-    static var EVENT_DID_TAP_MY_LOCATION_DOT: String = "didTapMyLocationDot";
     static var EVENT_DID_BEGIN_DRAGGING_MARKER: String = "didBeginDraggingMarker";
     static var EVENT_DID_DRAG_MARKER: String = "didDragMarker";
     static var EVENT_DID_END_DRAGGING_MARKER: String = "didEndDraggingMarker";
+    static var EVENT_DID_TAP_MY_LOCATION_BUTTON: String = "didTapMyLocationButton";
+    static var EVENT_DID_TAP_MY_LOCATION_DOT: String = "didTapMyLocationDot";
     static var EVENT_DID_TAP_POI: String = "didTapPoi";
     static var EVENT_DID_BEGIN_MOVING_CAMERA: String = "didBeginMovingCamera";
     static var EVENT_DID_MOVE_CAMERA: String = "didMoveCamera";
