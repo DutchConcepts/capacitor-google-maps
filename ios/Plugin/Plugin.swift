@@ -77,9 +77,10 @@ public class CapacitorGoogleMaps: CustomMapViewEvents {
             self.customWebView?.customMapViews[customMapView.id] = customMapView
             
             if self.markerHandler.shouldClusterMarkers {
-                self.markerHandler.updateClusterIcon {
-                    self.markerHandler.addClusterManager(with: customMapView)
-                }
+                self.markerHandler.addClusterManager(with: customMapView)
+                
+                let icons: [Int: String]? = call.getObject("clusterIcons") as? [Int: String]
+                self.markerHandler.updateClusterIcon(mapId: customMapView.id, icons: icons, completion: nil)
             }
             
             if self.markerHandler.shouldPresentMarkersOnCameraChange {
@@ -147,28 +148,40 @@ public class CapacitorGoogleMaps: CustomMapViewEvents {
         }
     }
     
-    @objc func cluster(_ call: CAPPluginCall) {
+    @objc
+    func cluster(_ call: CAPPluginCall) {
         let mapId: String = call.getString("mapId", "")
+        
+        guard let customMapView = self.customWebView?.customMapViews[mapId] else {
+            call.reject("map not found")
+            return
+        }
         markerHandler.shouldClusterMarkers = true
         for marker in self.customMarkers {
             marker.value.map = nil
         }
         
         if markerHandler.clusterManager(for: mapId) == nil {
-            guard let map = self.customWebView?.customMapViews[mapId] else { return }
-            markerHandler.addClusterManager(with: map)
+            markerHandler.addClusterManager(with: customMapView)
         }
         
-        markerHandler.updateClusterIcon { [weak self] in
+        let icons: [Int: String]? = call.getObject("clusterIcons") as? [Int: String]
+        
+        markerHandler.updateClusterIcon(mapId: mapId, icons: icons) { [weak self] in
             self?.showMarkers(mapId: mapId)
             call.resolve()
         }
     }
     
-    @objc func updateClusterIcon(_ call: CAPPluginCall) {
+    @objc
+    func updateClusterIcon(_ call: CAPPluginCall) {
         let mapId: String = call.getString("mapId", "")
-        
-        self.markerHandler.updateClusterIcon(mapId: String, icons: [Int: String]?) {
+        guard self.customWebView?.customMapViews[mapId] != nil else {
+            call.reject("map not found")
+            return
+        }
+        let icons: [Int: String]? = call.getObject("clusterIcons") as? [Int: String]
+        self.markerHandler.updateClusterIcon(mapId: mapId, icons: icons) {
             call.resolve()
         }
     }
@@ -368,13 +381,13 @@ private extension CapacitorGoogleMaps {
                     marker.icon = image
                     
                     if self.markerHandler.shouldCacheMarkers {
-                        self.markerHandler.addMarker(marker, mapId: mapView.id)
+                        self.markerHandler.addMarker(marker, mapId: customMapView.id)
                     }
                     guard self.markerHandler.shouldClusterMarkers else {
-                        marker.map = mapView.GMapView
+                        marker.map = customMapView.GMapView
                         return
                     }
-                    let manager = self.markerHandler.clusterManager(for: mapView.id)
+                    let manager = self.markerHandler.clusterManager(for: customMapView.id)
                     manager?.add(marker)
                 }
             }
@@ -394,7 +407,7 @@ private extension CapacitorGoogleMaps {
             self.addMarker(node: node.next, customMapView: customMapView)
             return
         }
-        self.showMarkers(mapId: mapView.id)
+        self.showMarkers(mapId: customMapView.id)
     }
     
     func setupWebView() {

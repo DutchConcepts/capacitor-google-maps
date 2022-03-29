@@ -1,21 +1,22 @@
 import GoogleMapsUtils
 
 class IconProvider: NSObject, GMUClusterIconGenerator {
-    var icons: [Int: String] = [:] 
-    var iconImages: [UIImage] = []
+    private var icons: [Int: String] = [:]
+    private var iconImages: [String: UIImage] = [:]
     
     var onIconsFetched: NoArgsClosure?
     
     public func icon(forSize size: UInt) -> UIImage! {
-        for (index, limit) in icons.map({ $0.key }).sorted().enumerated() {
-            if size < limit && iconImages.count > index {
-                return iconImages[index]
+        for limit in icons.keys.sorted() {
+            if size < limit {
+                return iconImages[icons[limit] ?? ""] ?? UIImage()
             }
         }
-        return UIImage()
+        return iconImages.first?.value ?? UIImage()
     }
     
-    func fetchIcons(completion: NoArgsClosure?) {
+    func fetchIcons(icons: [Int: String], completion: NoArgsClosure?) {
+        self.icons = icons
         let imageUrls = icons.map { $0.value }
         let urlList: List<String> = List(elements: imageUrls)
         fetchIcons(element: urlList.first) {
@@ -34,7 +35,7 @@ class IconProvider: NSObject, GMUClusterIconGenerator {
                 self?.fetchIcons(element: element?.next, completion: completion)
                 return
             }
-            self?.iconImages.append(image.resize(targetSize: CGSize(width: 30, height: 30)) ?? UIImage())
+            self?.iconImages[urlString] = image
             self?.fetchIcons(element: element?.next, completion: completion)
         }
     }
