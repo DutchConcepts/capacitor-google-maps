@@ -38,14 +38,14 @@ class CustomMapView: UIViewController, GMSMapViewDelegate {
     
     var savedCallbackIdForDidTapCluster: String!;
     var preventDefaultForDidTapCluster: Bool = false;
-    
-    var showMarkers: (()->())?
 
     var savedCallbackIdForDidTapPoi: String!;
 
     var savedCallbackIdForDidBeginMovingCamera: String!;
     var savedCallbackIdForDidMoveCamera: String!;
     var savedCallbackIdForDidEndMovingCamera: String!;
+    
+    var showMarkers: (()->())?
 
     static var EVENT_DID_TAP_INFO_WINDOW: String = "didTapInfoWindow";
     static var EVENT_DID_CLOSE_INFO_WINDOW: String = "didCloseInfoWindow";
@@ -58,8 +58,6 @@ class CustomMapView: UIViewController, GMSMapViewDelegate {
     static var EVENT_DID_BEGIN_DRAGGING_MARKER: String = "didBeginDraggingMarker";
     static var EVENT_DID_DRAG_MARKER: String = "didDragMarker";
     static var EVENT_DID_END_DRAGGING_MARKER: String = "didEndDraggingMarker";
-    static var EVENT_DID_TAP_MY_LOCATION_BUTTON: String = "didTapMyLocationButton";
-    static var EVENT_DID_TAP_MY_LOCATION_DOT: String = "didTapMyLocationDot";
     static var EVENT_DID_TAP_POI: String = "didTapPoi";
     static var EVENT_DID_BEGIN_MOVING_CAMERA: String = "didBeginMovingCamera";
     static var EVENT_DID_MOVE_CAMERA: String = "didMoveCamera";
@@ -179,7 +177,7 @@ class CustomMapView: UIViewController, GMSMapViewDelegate {
             } else if (eventName == CustomMapView.EVENT_DID_TAP_MY_LOCATION_DOT) {
                 savedCallbackIdForDidTapMyLocationDot = callbackId
             } else if (eventName == CustomMapView.EVENT_DID_TAP_CLUSTER) {
-                savedCallbackIdForDidTapMyLocationDot = callbackId
+                savedCallbackIdForDidTapCluster = callbackId
             } else if (eventName == CustomMapView.EVENT_DID_TAP_POI) {
                 savedCallbackIdForDidTapPoi = callbackId
             } else if (eventName == CustomMapView.EVENT_DID_BEGIN_MOVING_CAMERA) {
