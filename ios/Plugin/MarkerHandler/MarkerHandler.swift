@@ -1,8 +1,8 @@
 import GoogleMapsUtils
 
 final class MarkerHandler: NSObject {
-    var shouldClusterMarkers: Bool = true
-    var shouldCacheMarkers: Bool = true
+    private (set) var shouldClusterMarkers: Bool = true
+    private (set) var shouldCacheMarkers: Bool = true
     var shouldPresentMarkersOnCameraChange: Bool { shouldCacheMarkers }
     
     private var clusterManagers = [String : GMUClusterManager]()
@@ -35,6 +35,12 @@ final class MarkerHandler: NSObject {
         }
     }
     
+    func disableClustering(mapId: String) {
+        shouldClusterMarkers = false
+        clusterManager(for: mapId)?.clearItems()
+        clusterManagers.removeValue(forKey: mapId)
+    }
+    
     func addMarker(_ marker: CustomMarker, mapId: String) {
         guard var cache = markerCache[mapId] else {
             var cache = Set<CustomMarker>()
@@ -65,6 +71,15 @@ final class MarkerHandler: NSObject {
     func updateClusterIcon(mapId: String, icons: [Int: String]?, completion: NoArgsClosure?) {
         guard let clusterIcons = icons else { return }
         iconProviders[mapId]?.fetchIcons(icons: clusterIcons, completion: completion)
+    }
+    
+    func clearCache(mapId: String) {
+        markerCache.removeValue(forKey: mapId)
+    }
+    
+    func disableCaching() {
+        shouldCacheMarkers = false
+        markerCache.removeAll()
     }
 }
 

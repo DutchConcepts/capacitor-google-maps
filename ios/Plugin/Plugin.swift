@@ -186,6 +186,25 @@ public class CapacitorGoogleMaps: CustomMapViewEvents {
         }
     }
     
+    @objc
+    func disableCaching(_ call: CAPPluginCall) {
+        markerHandler.disableCaching()
+        call.resolve()
+    }
+    
+    @objc
+    func disableClustering(_ call: CAPPluginCall) {
+        let mapId: String = call.getString("mapId", "")
+        guard self.customWebView?.customMapViews[mapId] != nil else {
+            call.reject("map not found")
+            return
+        }
+        markerHandler.disableClustering(mapId: mapId)
+        showMarkers(mapId: mapId)
+        
+        call.resolve()
+    }
+    
     @objc func moveCamera(_ call: CAPPluginCall) {
         let mapId: String = call.getString("mapId", "")
 

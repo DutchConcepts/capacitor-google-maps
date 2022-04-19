@@ -8,6 +8,8 @@ CAP_PLUGIN(CapacitorGoogleMaps, "CapacitorGoogleMaps",
            CAP_PLUGIN_METHOD(createMap, CAPPluginReturnPromise);
            CAP_PLUGIN_METHOD(updateMap, CAPPluginReturnPromise);
            CAP_PLUGIN_METHOD(cluster, CAPPluginReturnPromise);
+           CAP_PLUGIN_METHOD(disableClustering, CAPPluginReturnPromise);
+           CAP_PLUGIN_METHOD(disableCaching, CAPPluginReturnPromise);
            CAP_PLUGIN_METHOD(updateClusterIcon, CAPPluginReturnPromise);
            CAP_PLUGIN_METHOD(moveCamera, CAPPluginReturnPromise);
            CAP_PLUGIN_METHOD(addMarker, CAPPluginReturnPromise);
