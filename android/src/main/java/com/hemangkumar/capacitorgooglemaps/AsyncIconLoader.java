@@ -7,7 +7,7 @@ import android.graphics.Picture;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.PictureDrawable;
 import android.text.TextUtils;
-import android.util.DisplayMetrics;
+import android.util.LruCache;
 import android.util.Size;
 
 import androidx.annotation.NonNull;
@@ -29,6 +29,11 @@ import java.util.Locale;
 
 class AsyncIconLoader {
 
+    private static final int PICTURE_DOWNLOAD_TIMEOUT = 3000;
+    private static final int FAST_CACHE_SIZE_ENTRIES = 32;
+
+    private static final LruCache<String, Bitmap> bitmapCache = new LruCache<>(FAST_CACHE_SIZE_ENTRIES);
+
     public interface OnIconReady {
         void onReady(@Nullable Bitmap bitmap);
     }
@@ -47,8 +52,13 @@ class AsyncIconLoader {
             onIconReady.onReady(null);
             return;
         }
-
-        if (iconDescriptor.url.toLowerCase(Locale.ROOT).endsWith(".svg")) {
+        String url = iconDescriptor.url.toLowerCase(Locale.ROOT);
+        Bitmap cachedBitmap = bitmapCache.get(url);
+        if (cachedBitmap != null) {
+            onIconReady.onReady(cachedBitmap);
+            return;
+        }
+        if (url.endsWith(".svg")) {
             loadSvg(onIconReady);
         } else {
             loadBitmap(onIconReady);
@@ -59,7 +69,7 @@ class AsyncIconLoader {
         RequestBuilder<Bitmap> builder = Glide.with(context)
                 .asBitmap()
                 .load(iconDescriptor.url)
-                .timeout(3000);
+                .timeout(PICTURE_DOWNLOAD_TIMEOUT);
         scaleImageOptional(builder).into(
                 new CustomTarget<Bitmap>() {
                     // It will be called when the resource load has finished.
@@ -67,6 +77,7 @@ class AsyncIconLoader {
                     public void onResourceReady(
                             @NonNull Bitmap bitmap,
                             @Nullable Transition<? super Bitmap> transition) {
+                        bitmapCache.put(iconDescriptor.url, bitmap);
                         onIconReady.onReady(bitmap);
                     }
 
@@ -101,6 +112,7 @@ class AsyncIconLoader {
                         }
                         Picture picture = svg.renderToPicture();
                         Bitmap bitmap = pictureToBitmap(picture);
+                        bitmapCache.put(iconDescriptor.url, bitmap);
                         onIconReady.onReady(bitmap);
                     }
                 } catch (IOException | SVGParseException exception) {
