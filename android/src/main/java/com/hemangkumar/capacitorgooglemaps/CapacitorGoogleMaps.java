@@ -28,6 +28,8 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @CapacitorPlugin(
         name = "CapacitorGoogleMaps",
@@ -522,7 +524,7 @@ public class CapacitorGoogleMaps extends Plugin implements CustomMapViewEvents {
         final List<CustomMarker> customMarkers = new ArrayList<>(n);
         ExecutorService executorService = Executors.newFixedThreadPool(4);
         final Object syncRoot = new Object();
-
+        final AtomicInteger nMarkersCounter = new AtomicInteger(0);
         // prepare customMarkers as fast as possible. Really it doesn't increase the total
         // speed of this method :( noticeably.
         for (int i = 0; i < n; i++) {
@@ -539,7 +541,7 @@ public class CapacitorGoogleMaps extends Plugin implements CustomMapViewEvents {
                     customMarker.updateFromJSObject(jsObject);
                     synchronized (customMarkers) {
                         customMarkers.add(customMarker);
-                        if (customMarkers.size() == n) {
+                        if (nMarkersCounter.addAndGet(1) == n) {
                             synchronized (syncRoot) {
                                 syncRoot.notify();
                             }
@@ -556,15 +558,15 @@ public class CapacitorGoogleMaps extends Plugin implements CustomMapViewEvents {
                 // Wait for customMarkers are populated
                 do {
                     syncRoot.wait();
-                } while (customMarkers.size() < n);
+                } while (nMarkersCounter.get() < n);
             } catch (InterruptedException e) {
                 call.reject("exception in addMarkers", e);
                 return;
             }
         }
 
-        final int[] nAddMarkersInProgress = new int[1];
-        nAddMarkersInProgress[0] = n;
+        AtomicBoolean isMarkerPlaced = new AtomicBoolean(false);
+
         for (CustomMarker customMarker : customMarkers) {
             if (executorService.isShutdown()) {
                 call.reject("exception in addMarkers");
@@ -580,10 +582,11 @@ public class CapacitorGoogleMaps extends Plugin implements CustomMapViewEvents {
                                                 .opt("marker")
                                 );
                                 synchronized (syncRoot) {
+                                    isMarkerPlaced.set(true);
                                     // unblock ONE THREAD! Otherwise UI will be freezed!
                                     syncRoot.notify();
                                 }
-                                if (--nAddMarkersInProgress[0] <= 0) {
+                                if (nMarkersCounter.addAndGet(-1) == 0) {
                                     JSObject jsResult = new JSObject();
                                     jsResult.put("mapId", mapId);
                                     JSArray jsMarkerOutputEntries = JSArray.from(result.toArray());
@@ -597,7 +600,10 @@ public class CapacitorGoogleMaps extends Plugin implements CustomMapViewEvents {
                     try {
                         // wait for Marker is rendered before the next iteration
                         // here is a background thread -> No UI freeze
-                        syncRoot.wait();
+                        if (!isMarkerPlaced.get()) {
+                            syncRoot.wait();
+                            isMarkerPlaced.set(false);
+                        }
                     } catch (InterruptedException ignored) {
                         executorService.shutdown();
                     }
