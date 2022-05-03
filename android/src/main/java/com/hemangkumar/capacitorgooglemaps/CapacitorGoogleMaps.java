@@ -541,12 +541,13 @@ public class CapacitorGoogleMaps extends Plugin implements CustomMapViewEvents {
                     customMarker.updateFromJSObject(jsObject);
                     synchronized (customMarkers) {
                         customMarkers.add(customMarker);
-                        if (nMarkersCounter.addAndGet(1) == n) {
-                            synchronized (syncRoot) {
-                                syncRoot.notify();
-                            }
+                    }
+                    if (nMarkersCounter.addAndGet(1) == n) {
+                        synchronized (syncRoot) {
+                            syncRoot.notify();
                         }
                     }
+
                 } catch (JSONException ignored) {
                     executorService.shutdown();
                 }
@@ -556,9 +557,9 @@ public class CapacitorGoogleMaps extends Plugin implements CustomMapViewEvents {
         synchronized (syncRoot) {
             try {
                 // Wait for customMarkers are populated
-                do {
+                while (nMarkersCounter.get() < n) {
                     syncRoot.wait();
-                } while (nMarkersCounter.get() < n);
+                }
             } catch (InterruptedException e) {
                 call.reject("exception in addMarkers", e);
                 return;
@@ -567,12 +568,13 @@ public class CapacitorGoogleMaps extends Plugin implements CustomMapViewEvents {
 
         AtomicBoolean isMarkerPlaced = new AtomicBoolean(false);
 
-        for (CustomMarker customMarker : customMarkers) {
-            if (executorService.isShutdown()) {
-                call.reject("exception in addMarkers");
-                return;
-            }
-            executorService.execute(() -> {
+
+        executorService.execute(() -> {
+            for (CustomMarker customMarker : customMarkers) {
+                if (executorService.isShutdown()) {
+                    call.reject("exception in addMarkers");
+                    return;
+                }
                 getBridge().getActivity().runOnUiThread(() -> {
                     customMapView.addMarker(
                             customMarker,
@@ -583,7 +585,6 @@ public class CapacitorGoogleMaps extends Plugin implements CustomMapViewEvents {
                                 );
                                 synchronized (syncRoot) {
                                     isMarkerPlaced.set(true);
-                                    // unblock ONE THREAD! Otherwise UI will be freezed!
                                     syncRoot.notify();
                                 }
                                 if (nMarkersCounter.addAndGet(-1) == 0) {
@@ -608,9 +609,8 @@ public class CapacitorGoogleMaps extends Plugin implements CustomMapViewEvents {
                         executorService.shutdown();
                     }
                 }
-            });
-        }
-        //executorService.shutdown();
+            }
+        });
     }
 
     @PluginMethod(returnType = PluginMethod.RETURN_NONE)
