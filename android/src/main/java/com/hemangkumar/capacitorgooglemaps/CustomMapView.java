@@ -126,13 +126,12 @@ public class CustomMapView
 
     public MapCameraPosition mapCameraPosition;
     public MapPreferences mapPreferences;
-    private final MarkerVisibilityCorrector markerVisibilityCorrector;
+    private MarkerVisibilityCorrector markerVisibilityCorrector;
 
     public CustomMapView(@NonNull AppCompatActivity activity, CustomMapViewEvents customMapViewEvents) {
         this.activity = activity;
         this.customMapViewEvents = customMapViewEvents;
         this.id = UUID.randomUUID().toString();
-        markerVisibilityCorrector = new MarkerVisibilityCorrector(markers, polygons, circles);
     }
 
     public String getId() {
@@ -172,8 +171,12 @@ public class CustomMapView
 
         assignProxyListenerToMap();
         CustomMarkerManager markerManager = new CustomMarkerManager(googleMap, mapEventsListener);
+        markerVisibilityCorrector = new MarkerVisibilityCorrector(
+                markerManager, markers, polygons, circles);
         clusterManager = new ClusterManager<>(activity, googleMap, markerManager);
-        clusterRenderer = new CustomClusterRenderer(activity, googleMap, clusterManager);
+        clusterRenderer = new CustomClusterRenderer(
+                activity, googleMap, clusterManager, markerVisibilityCorrector);
+        markerVisibilityCorrector.setClusterRenderer(clusterRenderer);
         clusterManager.setRenderer(clusterRenderer);
         mapEventsListener.addOnCameraIdleListener(clusterManager);
         clusterManager.setOnClusterClickListener(this);
@@ -633,7 +636,7 @@ public class CustomMapView
     }
 
     public void addPolygon(CustomPolygon customPolygon, @Nullable Consumer<ShapePolygon> consumer) {
-        customPolygon.addToMap(activity, googleMap, (shapePolygon)->{
+        customPolygon.addToMap(activity, googleMap, (shapePolygon) -> {
             polygons.put(customPolygon.id, shapePolygon);
             markerVisibilityCorrector.correctMarkerVisibility();
             if (consumer != null) {

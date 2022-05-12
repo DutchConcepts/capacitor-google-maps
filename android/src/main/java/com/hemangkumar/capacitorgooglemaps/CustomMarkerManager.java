@@ -4,9 +4,13 @@ import com.google.android.libraries.maps.GoogleMap;
 import com.google.android.libraries.maps.model.Marker;
 import com.google.maps.android.collections.MarkerManager;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class CustomMarkerManager extends MarkerManager {
 
     private final MapEventsListener mapEventsListener;
+    private Collection collection;
 
     public CustomMarkerManager(
             GoogleMap map,
@@ -43,5 +47,18 @@ public class CustomMarkerManager extends MarkerManager {
     public void onMarkerDragEnd(Marker marker) {
         super.onMarkerDragEnd(marker);
         mapEventsListener.onMarkerDragEnd(marker);
+    }
+
+    public java.util.Collection<Marker> getMarkers() {
+        if (collection != null)
+            return collection.getMarkers();
+        else
+            return new ArrayList<Marker>();
+    }
+
+    @Override
+    public Collection newCollection() {
+        collection = super.newCollection();
+        return collection;
     }
 }

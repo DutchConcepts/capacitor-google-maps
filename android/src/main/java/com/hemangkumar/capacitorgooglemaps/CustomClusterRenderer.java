@@ -20,6 +20,7 @@ import com.google.maps.android.clustering.view.DefaultClusterRenderer;
 import com.google.maps.android.ui.IconGenerator;
 import com.hemangkumar.capacitorgooglemaps.capacitorgooglemaps.R;
 
+import java.util.Collection;
 import java.util.WeakHashMap;
 
 class CustomClusterRenderer extends DefaultClusterRenderer<CustomClusterItem> {
@@ -30,12 +31,15 @@ class CustomClusterRenderer extends DefaultClusterRenderer<CustomClusterItem> {
     private final TextView clusterText;
     private final static Object OBJECT = new Object();
     private final WeakHashMap<Marker, Object> clusteredMarkers = new WeakHashMap<>();
+    private final MarkerVisibilityCorrector markerVisibilityCorrector;
 
     public CustomClusterRenderer(
             AppCompatActivity activity,
             GoogleMap map,
-            ClusterManager<CustomClusterItem> clusterManager) {
+            ClusterManager<CustomClusterItem> clusterManager,
+            MarkerVisibilityCorrector markerVisibilityCorrector) {
         super(activity, map, clusterManager);
+        this.markerVisibilityCorrector = markerVisibilityCorrector;
         iconGenerator = new IconGenerator(activity.getApplicationContext());
         iconGenerator.setBackground(null);
         View clusterLayout = activity.getLayoutInflater().inflate(R.layout.cluster_layout, null);
@@ -64,6 +68,10 @@ class CustomClusterRenderer extends DefaultClusterRenderer<CustomClusterItem> {
         return clusteredMarkers.containsKey(marker);
     }
 
+    public Collection<Marker> getClusteredMarkers() {
+        return clusteredMarkers.keySet();
+    }
+
     @Override
     protected void onBeforeClusterItemRendered(@NonNull CustomClusterItem item, @NonNull MarkerOptions markerOptions) {
         item.getCustomMarker().updateMarkerOptions(markerOptions);
@@ -76,6 +84,7 @@ class CustomClusterRenderer extends DefaultClusterRenderer<CustomClusterItem> {
         if (icon != null) {
             marker.setIcon(icon);
         }
+        markerVisibilityCorrector.correctMarkerVisibility(marker);
     }
 
     @Override
@@ -91,6 +100,7 @@ class CustomClusterRenderer extends DefaultClusterRenderer<CustomClusterItem> {
     @Override
     protected void onClusterRendered(@NonNull Cluster<CustomClusterItem> cluster, @NonNull Marker marker) {
         clusteredMarkers.put(marker, OBJECT);
+        markerVisibilityCorrector.correctMarkerVisibility(marker);
     }
 
     @Override
@@ -102,11 +112,13 @@ class CustomClusterRenderer extends DefaultClusterRenderer<CustomClusterItem> {
         } else {
             super.onClusterUpdated(cluster, marker);
         }
+        markerVisibilityCorrector.correctMarkerVisibility(marker);
     }
 
     @Override
     protected void onClusterItemRendered(@NonNull CustomClusterItem clusterItem, @NonNull Marker marker) {
         marker.setTag(clusterItem.getCustomMarker().getTag());
+        markerVisibilityCorrector.correctMarkerVisibility(marker);
     }
 
     private BitmapDescriptor getClusterIcon(Cluster<CustomClusterItem> cluster) {

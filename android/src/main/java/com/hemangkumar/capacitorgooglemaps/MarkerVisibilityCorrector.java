@@ -4,22 +4,31 @@ import com.google.android.libraries.maps.model.LatLng;
 import com.google.android.libraries.maps.model.Marker;
 import com.google.maps.android.PolyUtil;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
 public class MarkerVisibilityCorrector {
     private static final double EARTH_RADIUS = 6371.00; // Radius in Kilometers default
+    private final CustomMarkerManager markerManager;
+    private CustomClusterRenderer clusterRenderer;
     private final Map<String, Marker> markers;
     private final Map<String, ShapePolygon> polygons;
     private final Map<String, ShapeCircle> circles;
     private final Map<String, Boolean> savedMarkerVisibilities = new HashMap<>();
 
-    public MarkerVisibilityCorrector(final Map<String, Marker> markers,
+    public MarkerVisibilityCorrector(final CustomMarkerManager markerManager,
+                                     final Map<String, Marker> markers,
                                      final Map<String, ShapePolygon> polygons,
                                      final Map<String, ShapeCircle> circles) {
+        this.markerManager = markerManager;
         this.markers = markers;
         this.polygons = polygons;
         this.circles = circles;
+    }
+
+    public void setClusterRenderer(CustomClusterRenderer clusterRenderer) {
+        this.clusterRenderer = clusterRenderer;
     }
 
     public void clear() {
@@ -31,7 +40,15 @@ public class MarkerVisibilityCorrector {
     }
 
     public void correctMarkerVisibility() {
-        for (Marker marker : markers.values()) {
+        correctMarkerVisibility(markers.values());
+        if (clusterRenderer != null) {
+            correctMarkerVisibility(clusterRenderer.getClusteredMarkers());
+        }
+        correctMarkerVisibility(markerManager.getMarkers());
+    }
+
+    public void correctMarkerVisibility(Collection<Marker> markers) {
+        for (Marker marker : markers) {
             correctMarkerVisibility(marker);
         }
     }
@@ -43,20 +60,16 @@ public class MarkerVisibilityCorrector {
     private boolean isCoveredWithShape(Marker marker) {
         for (Map.Entry<String, ShapePolygon> polygonEntry : polygons.entrySet()) {
             ShapePolygon polygon = polygonEntry.getValue();
-            if (polygon.isAboveMarkers() &&
+            if (polygon.isAboveMarkers() && polygon.isVisible() &&
                     (PolyUtil.containsLocation(marker.getPosition(), polygon.getPoints(), polygon.isGeodesic())
                             || PolyUtil.isLocationOnEdge(marker.getPosition(), polygon.getPoints(), polygon.isGeodesic()))) {
-                if (polygon.isVisible()) {
-                    return true;
-                }
+                return true;
             }
         }
         for (ShapeCircle circle : circles.values()) {
-            if (circle.isAboveMarkers() &&
+            if (circle.isAboveMarkers() && circle.isVisible() &&
                     (calculateDistance(circle.getCenter(), marker.getPosition()) <= circle.getRadius())) {
-                if (circle.isVisible()) {
-                    return true;
-                }
+                return true;
             }
         }
         return false;
