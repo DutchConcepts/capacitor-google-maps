@@ -26,6 +26,7 @@ import com.google.android.libraries.maps.model.Circle;
 import com.google.android.libraries.maps.model.GroundOverlay;
 import com.google.android.libraries.maps.model.LatLng;
 import com.google.android.libraries.maps.model.Marker;
+import com.google.android.libraries.maps.model.MarkerOptions;
 import com.google.android.libraries.maps.model.PointOfInterest;
 import com.google.android.libraries.maps.model.Polygon;
 import com.google.android.libraries.maps.model.Polyline;
@@ -578,12 +579,20 @@ public class CustomMapView
     }
 
     public void addMarker(CustomMarker customMarker, @Nullable Consumer<Marker> consumer) {
+        // the only way to guarantee the visibility IS EFFECTIVE is to set it in MarkerOptions.
+        // Otherwise ~1% of markers which are considered invisible will actually visible.
+        MarkerOptions markerOptions = customMarker.getMarkerOptions();
+        final boolean origVisibility = markerOptions.isVisible();
+        final boolean shouldHide = markerVisibilityCorrector.isCoveredWithShape(
+                markerOptions.getPosition());
+        markerOptions.visible(!shouldHide);
         customMarker.addToMap(
                 activity,
                 googleMap,
                 (marker) -> {
+                    markerOptions.visible(origVisibility); // restore ORIGINAL visibility in options only!
+                    markerVisibilityCorrector.updateVisibility(shouldHide, origVisibility, marker);
                     markers.put(customMarker.markerId, marker);
-                    markerVisibilityCorrector.correctMarkerVisibility(marker);
                     if (consumer != null) {
                         consumer.accept(marker);
                     }

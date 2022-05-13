@@ -84,9 +84,9 @@ public class CustomMarker {
         final String title = preferences.getString("title", "");
         final String snippet = preferences.getString("snippet", "");
         final Float opacity = JSObjectDefaults.getFloatSafe(preferences, "opacity", 1f);
-        final Boolean isFlat = JSObjectDefaults.getBooleanSafe(preferences,"isFlat", false);
-        final Boolean isDraggable = JSObjectDefaults.getBooleanSafe(preferences,"isDraggable", false);
-        final Integer zIndex = JSObjectDefaults.getIntegerSafe(preferences,"zIndex", 0);
+        final Boolean isFlat = JSObjectDefaults.getBooleanSafe(preferences, "isFlat", false);
+        final Boolean isDraggable = JSObjectDefaults.getBooleanSafe(preferences, "isDraggable", false);
+        final Integer zIndex = JSObjectDefaults.getIntegerSafe(preferences, "zIndex", 0);
 
         final JSObject anchor = JSObjectDefaults.getJSObjectSafe(preferences, "anchor", new JSObject());
         final Float anchorX = JSObjectDefaults.getFloatSafe(anchor, "x", 0.5f);

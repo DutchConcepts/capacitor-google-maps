@@ -1,12 +1,15 @@
 package com.hemangkumar.capacitorgooglemaps;
 
+import androidx.core.util.Consumer;
+
 import com.google.android.libraries.maps.model.LatLng;
 import com.google.android.libraries.maps.model.Marker;
+import com.google.android.libraries.maps.model.MarkerOptions;
 import com.google.maps.android.PolyUtil;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.WeakHashMap;
 
 public class MarkerVisibilityCorrector {
     private static final double EARTH_RADIUS = 6371.00; // Radius in Kilometers default
@@ -15,7 +18,7 @@ public class MarkerVisibilityCorrector {
     private final Map<String, Marker> markers;
     private final Map<String, ShapePolygon> polygons;
     private final Map<String, ShapeCircle> circles;
-    private final Map<String, Boolean> savedMarkerVisibilities = new HashMap<>();
+    private final Map<Marker, Boolean> savedMarkerVisibilities = new WeakHashMap<>();
 
     public MarkerVisibilityCorrector(final CustomMarkerManager markerManager,
                                      final Map<String, Marker> markers,
@@ -54,35 +57,34 @@ public class MarkerVisibilityCorrector {
     }
 
     public void correctMarkerVisibility(Marker marker) {
-        updateVisibility(isCoveredWithShape(marker), marker);
+        updateVisibility(isCoveredWithShape(marker.getPosition()), marker.isVisible(), marker);
     }
 
-    private boolean isCoveredWithShape(Marker marker) {
-        for (Map.Entry<String, ShapePolygon> polygonEntry : polygons.entrySet()) {
-            ShapePolygon polygon = polygonEntry.getValue();
+    public boolean isCoveredWithShape(LatLng pos) {
+        for (ShapePolygon polygon : polygons.values()) {
             if (polygon.isAboveMarkers() && polygon.isVisible() &&
-                    (PolyUtil.containsLocation(marker.getPosition(), polygon.getPoints(), polygon.isGeodesic())
-                            || PolyUtil.isLocationOnEdge(marker.getPosition(), polygon.getPoints(), polygon.isGeodesic()))) {
+                    (PolyUtil.containsLocation(pos, polygon.getPoints(), polygon.isGeodesic())
+                            || PolyUtil.isLocationOnEdge(pos, polygon.getPoints(), polygon.isGeodesic()))) {
                 return true;
             }
         }
         for (ShapeCircle circle : circles.values()) {
             if (circle.isAboveMarkers() && circle.isVisible() &&
-                    (calculateDistance(circle.getCenter(), marker.getPosition()) <= circle.getRadius())) {
+                    (calculateDistance(circle.getCenter(), pos) <= circle.getRadius())) {
                 return true;
             }
         }
         return false;
     }
 
-    private void updateVisibility(boolean shouldHide, Marker marker) {
+    public void updateVisibility(boolean shouldHide, boolean origVisibility, Marker marker) {
         if (shouldHide) {
-            if (!savedMarkerVisibilities.containsKey(marker.getId())) {
-                savedMarkerVisibilities.put(marker.getId(), marker.isVisible());
+            if (!savedMarkerVisibilities.containsKey(marker)) {
+                savedMarkerVisibilities.put(marker, origVisibility);
             }
             marker.setVisible(false);
         } else {
-            Boolean visibility = savedMarkerVisibilities.remove(marker.getId());
+            Boolean visibility = savedMarkerVisibilities.remove(marker);
             if (visibility != null) {
                 marker.setVisible(visibility);
             }
