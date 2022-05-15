@@ -21,6 +21,7 @@ export { UpdatePolylineOptions } from "./methods/UpdatePolyline";
 export { AddCircleOptions } from "./methods/AddCircleOptions";
 export { GetCircleOptions } from "./methods/GetCircle";
 export { CircleResult } from "./methods/CircleResult";
+export { SetMarkersBelowPolygonsModeOptions } from "./methods/SetMarkersBelowPolygonsModeOptions";
 
 // events
 export * from "./events/DidTapInfoWindow";

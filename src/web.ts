@@ -30,6 +30,7 @@ import {
   AddCircleOptions,
   GetCircleOptions,
   CircleResult,
+  SetMarkersBelowPolygonsModeOptions,
   DidTapInfoWindowCallback,
   DidCloseInfoWindowCallback,
   DidTapMapCallback,
@@ -142,6 +143,10 @@ export class CapacitorGoogleMapsWeb
   }
 
   async removeCircle(_options: GetCircleOptions): Promise<void> {
+    throw this.unimplemented("Not implemented on web.");
+  }
+
+  async setMarkersBelowPolygonsMode(_options: SetMarkersBelowPolygonsModeOptions): Promise<void> {
     throw this.unimplemented("Not implemented on web.");
   }
 

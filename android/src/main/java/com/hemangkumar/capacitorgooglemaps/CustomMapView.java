@@ -127,7 +127,7 @@ public class CustomMapView
 
     public MapCameraPosition mapCameraPosition;
     public MapPreferences mapPreferences;
-    private MarkerVisibilityCorrector markerVisibilityCorrector;
+    MarkerVisibilityCorrector markerVisibilityCorrector;
 
     public CustomMapView(@NonNull AppCompatActivity activity, CustomMapViewEvents customMapViewEvents) {
         this.activity = activity;
@@ -171,12 +171,12 @@ public class CustomMapView
         }
 
         assignProxyListenerToMap();
+        markerVisibilityCorrector = new MarkerVisibilityCorrector(markers, polygons, circles);
         CustomMarkerManager markerManager = new CustomMarkerManager(googleMap, mapEventsListener);
-        markerVisibilityCorrector = new MarkerVisibilityCorrector(
-                markerManager, markers, polygons, circles);
         clusterManager = new ClusterManager<>(activity, googleMap, markerManager);
         clusterRenderer = new CustomClusterRenderer(
                 activity, googleMap, clusterManager, markerVisibilityCorrector);
+        markerVisibilityCorrector.setMarkerManager(markerManager);
         markerVisibilityCorrector.setClusterRenderer(clusterRenderer);
         clusterManager.setRenderer(clusterRenderer);
         mapEventsListener.addOnCameraIdleListener(clusterManager);

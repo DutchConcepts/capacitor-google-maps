@@ -29,6 +29,7 @@ import {
   AddCircleOptions,
   GetCircleOptions,
   CircleResult,
+  SetMarkersBelowPolygonsModeOptions,
   // events
   DidTapInfoWindowCallback,
   DidCloseInfoWindowCallback,
@@ -109,6 +110,8 @@ export interface CapacitorGoogleMapsPlugin {
   getCircle(options: GetCircleOptions): Promise<CircleResult>;
 
   removeCircle(options: GetCircleOptions): Promise<void>;
+
+  setMarkersBelowPolygonsMode(options: SetMarkersBelowPolygonsModeOptions): Promise<void>;
 
   didTapInfoWindow(
     options: DefaultEventOptions,

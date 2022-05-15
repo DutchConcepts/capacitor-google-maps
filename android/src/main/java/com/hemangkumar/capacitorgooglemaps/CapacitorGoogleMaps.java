@@ -525,13 +525,9 @@ public class CapacitorGoogleMaps extends Plugin implements CustomMapViewEvents {
             call.reject("map not found");
             return;
         }
-        try {
-            final JSArray jsMarkers = call.getArray("markers", new JSArray());
-            MarkersAppender appender = new MarkersAppender();
-            appender.addMarkers(customMapView, jsMarkers, getBridge().getActivity(), call::resolve);
-        } catch (MarkersAppender.AppenderException e) {
-            call.reject("exception in addMarkers", e);
-        }
+        final JSArray jsMarkers = call.getArray("markers", new JSArray());
+        MarkersAppender appender = new MarkersAppender();
+        appender.addMarkers(customMapView, jsMarkers, getBridge().getActivity(), call::resolve);
     }
 
     @PluginMethod()
@@ -730,6 +726,15 @@ public class CapacitorGoogleMaps extends Plugin implements CustomMapViewEvents {
             } else {
                 call.reject("circle is not found when remove");
             }
+        });
+    }
+
+    @PluginMethod(returnType = PluginMethod.RETURN_NONE)
+    public void setMarkersBelowPolygonsMode(final PluginCall call) {
+        callMapViewMethodInUiThread(call, (customMapView) -> {
+            Boolean enable = call.getBoolean("enable");
+            customMapView.markerVisibilityCorrector.setCorrectionMode(enable != null && enable);
+            call.resolve();
         });
     }
 
