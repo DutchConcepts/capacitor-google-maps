@@ -136,6 +136,9 @@ public class CustomMapView
         }
         this.googleMap.setTrafficEnabled(this.mapPreferences.appearance.isTrafficShown);
 
+        // zoom
+        this.googleMap.setMaxZoomPreference(this.mapPreferences.zoom.maxZoom);
+        this.googleMap.setMinZoomPreference(this.mapPreferences.zoom.minZoom);
 
         // execute callback
         if (customMapViewEvents != null && savedCallbackIdForCreate != null) {

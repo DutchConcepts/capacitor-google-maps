@@ -9,11 +9,13 @@ public class MapPreferences {
     public MapPreferencesGestures gestures;
     public MapPreferencesControls controls;
     public MapPreferencesAppearance appearance;
+    public MapPreferencesZoom zoom;
 
     public MapPreferences() {
         this.gestures = new MapPreferencesGestures();
         this.controls = new MapPreferencesControls();
         this.appearance = new MapPreferencesAppearance();
+        this.zoom = new MapPreferencesZoom();
     }
 
     public void updateFromJSObject(@Nullable JSObject preferences) {
@@ -27,6 +29,10 @@ public class MapPreferences {
             // update appearance
             JSObject appearanceObject = preferences.getJSObject("appearance");
             this.appearance.updateFromJSObject(appearanceObject);
+
+            // update zoom
+            JSObject zoomObject = preferences.getJSObject("zoom");
+            this.zoom.updateFromJSObject(zoomObject);
         }
     }
 
@@ -56,7 +62,6 @@ public class MapPreferences {
         if (this.appearance != null) {
             // set mapType
             googleMapOptions.mapType(this.appearance.type);
-
             // appearance.style can only be set through `GoogleMap`
             // appearance.isIndoorShown can only be set through `GoogleMap`
             // appearance.isBuildingsShown can only be set through `GoogleMap`
