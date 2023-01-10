@@ -7,7 +7,11 @@ export { ClearMapOptions } from "./methods/ClearMap";
 export { MoveCameraOptions } from "./methods/MoveCamera";
 export { ElementFromPointResultOptions } from "./methods/ElementFromPointResult";
 export { AddMarkerOptions, AddMarkerResult } from "./methods/AddMarker";
-export { AddMarkersOptions, MarkerInputEntry, AddMarkersResult } from "./methods/AddMarkers";
+export {
+  AddMarkersOptions,
+  MarkerInputEntry,
+  AddMarkersResult,
+} from "./methods/AddMarkers";
 export { RemoveMarkerOptions } from "./methods/RemoveMarker";
 
 // events
@@ -41,3 +45,4 @@ export { MapPreferences } from "./models/GoogleMap/Preferences";
 export { PointOfInterest } from "./models/GoogleMap/PointOfInterest";
 export { BoundingRect } from "./models/BoundingRect";
 export { LatLng } from "./models/LatLng";
+export { MapZoom } from "./models/GoogleMap/Zoom";

@@ -2,6 +2,7 @@ import {
   MapAppearance,
   MapControls,
   MapGestures,
+  MapZoom,
 } from "./../../../definitions";
 
 export interface MapPreferences {
@@ -18,9 +19,7 @@ export interface MapPreferences {
    */
   appearance?: MapAppearance;
 
-  maxZoom?: number; // @todo: Sets a preferred upper bound for the camera zoom.
-
-  minZoom?: number; // @todo: Sets a preferred lower bound for the camera zoom.
+  zoom?: MapZoom;
 
   padding?: any; // @todo: Sets padding on the map.
 
