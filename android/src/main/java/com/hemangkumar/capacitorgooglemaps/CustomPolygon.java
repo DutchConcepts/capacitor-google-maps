@@ -1,177 +1,189 @@
 package com.hemangkumar.capacitorgooglemaps;
 
-import android.graphics.Bitmap;
-import android.graphics.BitmapShader;
-import android.graphics.Canvas;
-import android.graphics.Paint;
-import android.graphics.Path;
-import android.graphics.Point;
-import android.graphics.Shader;
-
 import androidx.annotation.Nullable;
 import androidx.core.util.Consumer;
 import androidx.fragment.app.FragmentActivity;
 
+import com.getcapacitor.JSArray;
+import com.getcapacitor.JSObject;
+import com.getcapacitor.util.WebColor;
 import com.google.android.libraries.maps.GoogleMap;
-import com.google.android.libraries.maps.Projection;
-import com.google.android.libraries.maps.model.BitmapDescriptorFactory;
-import com.google.android.libraries.maps.model.GroundOverlay;
-import com.google.android.libraries.maps.model.GroundOverlayOptions;
 import com.google.android.libraries.maps.model.LatLng;
-import com.google.android.libraries.maps.model.LatLngBounds;
 import com.google.android.libraries.maps.model.Polygon;
+import com.google.android.libraries.maps.model.PolygonOptions;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 
-public class CustomPolygon extends CustomShape<ShapePolygon> {
-    private static final int OVERLAY_MAX_SIZE = 512;
-    private final ShapePolygonTraits traits = ShapePolygonTraits.INSTANCE;
-    private ShapePolygonOptions options;
+public class CustomPolygon  {
+    public final String id = UUID.randomUUID().toString();
+    protected JSObject tag = new JSObject();
+    private final PolygonOptions options = new PolygonOptions();
 
-    @Override
-    protected ShapeOptions getOptions() {
+
+    protected PolygonOptions getOptions() {
         return options;
     }
 
-    @Override
-    protected ShapeTraits getShapeTraits() {
-        return traits;
-    }
-
-    @Override
-    protected ShapeOptions newOptions() {
-        options = new ShapePolygonOptions();
-        return options;
-    }
-
-    public void addToMap(FragmentActivity activity, GoogleMap googleMap, @Nullable Consumer<ShapePolygon> consumer) {
-        final Polygon polygon = googleMap.addPolygon(options.getNativeOptions());
+    public void addToMap(FragmentActivity _, GoogleMap googleMap, @Nullable Consumer<Polygon> consumer) {
+        final Polygon polygon = googleMap.addPolygon(options);
         polygon.setTag(tag);
-        IconDescriptor patternIconDescriptor = options.getPatternIconDescriptor();
-        if (patternIconDescriptor != null) {
-            new AsyncIconLoader(patternIconDescriptor, activity)
-                    .load((bitmap) -> {
-                        ShapePolygon shapePolygon;
-                        if (bitmap != null) {
-                            GroundOverlayOptions overlayOptions = fillPoly(
-                                    googleMap.getProjection(),
-                                    options.getPoints(),
-                                    bitmap,
-                                    0.0f);
-                            // put this overlay above the polygon
-                            overlayOptions.zIndex(options.getZIndex() + 1);
-                            GroundOverlay overlay = googleMap.addGroundOverlay(overlayOptions);
-                            shapePolygon = new ShapePolygon(polygon, overlay);
-                        } else {
-                            shapePolygon = new ShapePolygon(polygon);
-                        }
-                        shapePolygon.setAboveMarkers(options.isAboveMarkers());
-                        if (consumer != null) {
-                            consumer.accept(shapePolygon);
-                        }
-                    });
-        } else {
-            if (consumer != null) {
-                consumer.accept(new ShapePolygon(polygon));
+        if (consumer != null) {
+            consumer.accept(polygon);
+        }
+    }
+
+    public void updateFromJSObject(JSObject jsObject) {
+        loadPoints(jsObject, options::add);
+        JSObject jsPreferences = jsObject.getJSObject("preferences");
+        if (jsPreferences != null) {
+            loadHoles(jsPreferences);
+        }
+        initPlainFields(jsPreferences);
+        saveMetadataToTag(jsPreferences);
+    }
+
+    private static void loadPoints(final JSObject jsPoly, Consumer<LatLng> consumer) {
+        JSArray jsPoints = JSObjectDefaults.getJSArray(jsPoly, "points", new JSArray());
+        int n = jsPoints.length();
+        for (int i = 0; i < n; i++) {
+            JSObject jsLatLng = JSObjectDefaults.getJSObjectByIndex(jsPoints, i);
+            consumer.accept(loadLatLng(jsLatLng));
+        }
+    }
+
+    private static LatLng loadLatLng(JSObject jsLatLng) {
+        double latitude = jsLatLng.optDouble("latitude", 0d);
+        double longitude = jsLatLng.optDouble("longitude", 0d);
+        return new LatLng(latitude, longitude);
+    }
+
+    private void loadHoles(final JSObject preferences) {
+        JSArray jsHoles = JSObjectDefaults.getJSArray(preferences, "holes", new JSArray());
+        int n = jsHoles.length();
+        for (int i = 0; i < n; i++) {
+            JSArray jsLatLngArr = JSObjectDefaults.getJSArray(jsHoles, i, new JSArray());
+            int m = jsLatLngArr.length();
+            List<LatLng> holeList = new ArrayList<>(m);
+            for (int j = 0; j < m; j++) {
+                JSObject jsLatLon = JSObjectDefaults.getJSObjectByIndex(jsLatLngArr, j);
+                holeList.add(loadLatLng(jsLatLon));
             }
+            getOptions().addHole(holeList);
         }
     }
 
-    private GroundOverlayOptions fillPoly(Projection projection,
-                                          List<LatLng> points,
-                                          Bitmap tileBitmap,
-                                          float transparency) {
-        LatLngBounds bounds = getPolygonBounds(points);
+    private void initPlainFields(final JSObject jsPreferences) {
+        PolygonOptions options = getOptions();
 
-        double boundHeight = bounds.northeast.latitude - bounds.southwest.latitude;
-        double boundWidth = bounds.northeast.longitude - bounds.southwest.longitude;
+        final float strokeWidth = (float) jsPreferences.optDouble("strokeWidth", 6);
+        options.strokeWidth(strokeWidth);
 
-        Point northEast = projection.toScreenLocation(bounds.northeast);
-        Point southWest = projection.toScreenLocation(bounds.southwest);
 
-        int screenBoundHeight = southWest.y - northEast.y;
-        int screenBoundWidth = northEast.x - southWest.x;
+        final int strokeColor = WebColor.parseColor(jsPreferences.optString("strokeColor", "#000000"));
+        options.strokeColor(strokeColor);
 
-        // determine overlay bitmap size
-        double k = (double) screenBoundWidth / Math.abs((double) screenBoundHeight);
-        int overlayWidth;
-        int overlayHeight;
-        if (Math.abs(boundWidth) > Math.abs(boundHeight)) {
-            overlayWidth = OVERLAY_MAX_SIZE;
-            overlayHeight = (int) (overlayWidth * k);
+        final int fillColor = WebColor.parseColor(jsPreferences.optString("fillColor", "#300000FF"));
+        options.fillColor(fillColor);
+
+
+        final boolean isGeodesic = jsPreferences.optBoolean("isGeodesic", false);
+        options.geodesic(isGeodesic);
+
+
+        final float zIndex = (float) jsPreferences.optDouble("zIndex", 0);
+        final boolean visibility = jsPreferences.optBoolean("visibility", true);
+        final boolean isClickable = jsPreferences.optBoolean("isClickable", false);
+        options.zIndex(zIndex);
+        options.visible(visibility);
+        options.clickable(isClickable);
+    }
+
+    private void saveMetadataToTag(JSObject preferences) {
+        JSObject jsMetadata = JSObjectDefaults.getJSObjectSafe(
+                preferences, "metadata", new JSObject());
+        JSObject tag = new JSObject();
+        tag.put("id", id);
+        tag.put("metadata", jsMetadata);
+        this.tag = tag;
+    }
+
+    public JSObject getResultFor(Polygon polygon, String mapId) {
+        // initialize JSObjects to return
+        JSObject jsResult = new JSObject();
+        JSObject jsShape = new JSObject();
+        JSObject jsPreferences = new JSObject();
+
+        jsResult.put("polygon", jsShape);
+
+        jsShape.put("points", latLongsToJSArray(polygon.getPoints()));
+        jsPreferences.put("isGeodesic", polygon.isGeodesic());
+        jsPreferences.put("strokeWidth", polygon.getStrokeWidth());
+        jsPreferences.put("strokeColor", colorToString(polygon.getStrokeColor()));
+        jsPreferences.put("fillColor", colorToString(polygon.getFillColor()));
+
+        // preferences.holes
+        JSArray jsHoles = new JSArray();
+        for (List<LatLng> hole : polygon.getHoles()) {
+            JSArray jsHole = latLongsToJSArray(hole);
+            jsHoles.put(jsHole);
+        }
+        if (jsHoles.length() > 0) {
+            jsPreferences.put("holes", jsHoles);
+        }
+
+        // metadata
+        JSObject tag = (JSObject) polygon.getTag();
+        jsPreferences.put("metadata", getMetadata(tag));
+        // other preferences
+        jsPreferences.put("zIndex", polygon.getZIndex());
+        jsPreferences.put("visibility", polygon.isVisible());
+        jsPreferences.put("isClickable", polygon.isClickable());
+
+        jsShape.put("preferences", jsPreferences);
+
+        // map id
+        jsShape.put("mapId", mapId);
+
+        // id
+        String id = tag.optString("id", polygon.getId());
+        jsShape.put("id", id);
+
+        return jsResult;
+    }
+
+    private static JSObject getMetadata(JSObject tag) {
+        return JSObjectDefaults.getJSObjectSafe(tag, "metadata", new JSObject());
+    }
+
+    private static JSArray latLongsToJSArray(Collection<LatLng> positions) {
+        JSArray jsPositions = new JSArray();
+        for (LatLng pos : positions) {
+            JSObject jsPos = latLngToJSObject(pos);
+            jsPositions.put(jsPos);
+        }
+        return jsPositions;
+    }
+
+    private static JSObject latLngToJSObject(LatLng latLng) {
+        JSObject jsPos = new JSObject();
+        jsPos.put("latitude", latLng.latitude);
+        jsPos.put("longitude", latLng.longitude);
+        return jsPos;
+    }
+
+    private static String colorToString(int color) {
+        int r = ((color >> 16) & 0xff);
+        int g = ((color >> 8) & 0xff);
+        int b = ((color) & 0xff);
+        int a = ((color >> 24) & 0xff);
+        if (a != 255) {
+            return String.format("#%02X%02X%02X%02X", a, r, g, b);
         } else {
-            overlayHeight = OVERLAY_MAX_SIZE;
-            overlayWidth = (int) (overlayHeight * k);
+            return String.format("#%02X%02X%02X", r, g, b);
         }
-
-        // create overlay bitmap
-        Bitmap overlayBitmap = createOverlayBitmap(
-                projection,
-                northEast,
-                southWest,
-                overlayWidth,
-                overlayHeight,
-                points,
-                tileBitmap);
-
-        return new GroundOverlayOptions()
-                .image(BitmapDescriptorFactory.fromBitmap(overlayBitmap))
-                .transparency(transparency)
-                .positionFromBounds(bounds);
     }
 
-    private Bitmap createOverlayBitmap(Projection projection,
-                                       Point northEast,
-                                       Point southWest,
-                                       int width,
-                                       int height,
-                                       List<LatLng> points,
-                                       Bitmap tileBitmap) {
-        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-        Canvas canvas = new Canvas(bitmap);
-
-        Path path = new Path();
-        BitmapShader shader = new BitmapShader(tileBitmap,
-                Shader.TileMode.REPEAT, Shader.TileMode.REPEAT);
-
-        Paint paint = new Paint();
-        paint.setStyle(Paint.Style.FILL);
-        paint.setStrokeWidth(0);
-        paint.setAntiAlias(true);
-        paint.setShader(shader);
-
-        List<Point> screenPoints = new ArrayList<>(points.size());
-
-        double boundHeight = northEast.y - southWest.y;
-        double boundWidth = northEast.x - southWest.x;
-        double kx = width / boundWidth;
-        double ky = height / boundHeight;
-        for (int i = 0; i < points.size(); i++) {
-            Point p = projection.toScreenLocation(points.get(i));
-            Point screenPoint = new Point();
-            screenPoint.x = (int) (kx * (p.x - southWest.x));
-            screenPoint.y = height - (int) (ky * (p.y - southWest.y));
-            screenPoints.add(screenPoint);
-        }
-
-        path.moveTo(screenPoints.get(0).x, screenPoints.get(0).y);
-        for (int i = 1; i < points.size(); i++) {
-            path.lineTo(screenPoints.get(i).x, screenPoints.get(i).y);
-        }
-        path.close();
-
-        canvas.drawPath(path, paint);
-
-        return bitmap;
-    }
-
-    private LatLngBounds getPolygonBounds(List<LatLng> polygon) {
-        LatLngBounds.Builder builder = new LatLngBounds.Builder();
-        for (int i = 0; i < polygon.size(); i++) {
-            builder.include(polygon.get(i));
-        }
-        LatLngBounds bounds = builder.build();
-        return bounds;
-    }
 }

@@ -524,8 +524,8 @@ public class CapacitorGoogleMaps extends Plugin implements CustomMapViewEvents {
         callMapViewMethodInUiThread(call, (customMapView) -> {
             CustomPolygon customPolygon = new CustomPolygon();
             customPolygon.updateFromJSObject(call.getData());
-            customMapView.addPolygon(customPolygon, (shapePolygon) -> {
-                call.resolve(customPolygon.getResultFor(shapePolygon, customMapView.getId()));
+            customMapView.addPolygon(customPolygon, (polygon) -> {
+                call.resolve(customPolygon.getResultFor(polygon, customMapView.getId()));
             });
         });
     }

@@ -25,6 +25,7 @@ import com.google.android.libraries.maps.model.CameraPosition;
 import com.google.android.libraries.maps.model.LatLng;
 import com.google.android.libraries.maps.model.Marker;
 import com.google.android.libraries.maps.model.PointOfInterest;
+import com.google.android.libraries.maps.model.Polygon;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -54,7 +55,7 @@ public class CustomMapView
     GoogleMap googleMap;
 
     private HashMap<String, Marker> markers = new HashMap<>();
-    private final Map<String, ShapePolygon> polygons = new HashMap<>();
+    private final Map<String, Polygon> polygons = new HashMap<>();
 
     String savedCallbackIdForCreate;
 
@@ -474,18 +475,18 @@ public class CustomMapView
         return false;
     }
 
-    public void addPolygon(CustomPolygon customPolygon, @Nullable Consumer<ShapePolygon> consumer) {
-        customPolygon.addToMap(activity, googleMap, (shapePolygon) -> {
-            polygons.put(customPolygon.id, shapePolygon);
+    public void addPolygon(CustomPolygon customPolygon, @Nullable Consumer<Polygon> consumer) {
+        customPolygon.addToMap(activity, googleMap, (polygon) -> {
+            polygons.put(customPolygon.id, polygon);
             if (consumer != null) {
-                consumer.accept(shapePolygon);
+                consumer.accept(polygon);
             }
         });
     }
 
 
     public boolean removePolygon(String polygonId) {
-        ShapePolygon polygon = polygons.remove(polygonId);
+        Polygon polygon = polygons.remove(polygonId);
         if (polygon != null) {
             polygon.remove();
             return true;
