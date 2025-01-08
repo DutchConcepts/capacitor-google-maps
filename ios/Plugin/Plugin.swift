@@ -75,6 +75,10 @@ public class CapacitorGoogleMaps: CustomMapViewEvents {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 self.setupWebView()
             }
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                self.setupWebView()
+            }
         }
     }
     
