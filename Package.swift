@@ -25,6 +25,7 @@ let package = Package(
                 .product(name: "GoogleMapsCore", package: "ios-maps-sdk"),
                 .product(name: "SDWebImage", package: "SDWebImage")
             ],
-            path: "ios/Plugin")
+            path: "ios/Sources"
+        )
     ]
 )
